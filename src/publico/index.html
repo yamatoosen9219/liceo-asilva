@@ -43,7 +43,7 @@
       font-size: 14px;
       box-sizing: border-box;
     }
-    .buscador { display: flex; gap: 10px; }
+    .buscador { display: flex; gap: 10px; margin-bottom: 15px; }
     
     button {
       background-color: #2b6cb0;
@@ -56,6 +56,13 @@
     }
     button:hover { background-color: #2c5282; }
     
+    .btn-excel {
+      background-color: #1d6f42;
+      width: 100%;
+      margin-top: 5px;
+    }
+    .btn-excel:hover { background-color: #155231; }
+
     .btn-eliminar { background-color: #e53e3e; }
     .btn-eliminar:hover { background-color: #c53030; }
     
@@ -87,13 +94,18 @@
     <h1>Liceo Bicentenario Asilva 🏫</h1>
     <p class="subtitulo">Gestión de Estudiantes (CRUD Completo)</p>
 
-    <!-- 1. BUSCADOR Y ACCIONES (GET, PUT, DELETE) -->
+    <!-- 1. BUSCADOR Y ACCIONES (GET, PUT, DELETE, EXPORTAR) -->
     <div class="seccion">
-      <h2>🔍 Buscar Estudiante</h2>
+      <h2>🔍 Buscar / Exportar Estudiantes</h2>
       <div class="buscador">
         <input type="text" id="rutInput" placeholder="Ej: 21.456.789-0">
         <button onclick="buscarAlumno()">Buscar</button>
       </div>
+
+      <!-- Botón para exportar a CSV/Excel -->
+      <button id="btnExportarCSV" class="btn-excel" onclick="descargarCSV()">
+        📊 Descargar Nómina Excel (CSV)
+      </button>
 
       <div id="resultado" class="tarjeta-alumno oculto">
         <h3 id="nombreAlumno" style="margin-top:0;">-</h3>
@@ -175,21 +187,25 @@
         return;
       }
 
-      const respuesta = await fetch(`/api/alumnos/rut/${rut}`);
-      const datos = await respuesta.json();
+      try {
+        const respuesta = await fetch(`/api/alumnos/rut/${rut}`);
+        const datos = await respuesta.json();
 
-      if (datos.exito) {
-        rutActualGuardado = datos.alumno.rut; // Guardamos el RUT actual
-        errorMsg.classList.add('oculto');
-        document.getElementById('nombreAlumno').textContent = datos.alumno.nombre;
-        document.getElementById('cursoAlumno').textContent = datos.alumno.curso;
-        document.getElementById('asistenciaAlumno').textContent = datos.alumno.asistencia;
-        document.getElementById('promedioAlumno').textContent = datos.alumno.promedioCalculado;
-        resultadoDiv.classList.remove('oculto');
-      } else {
-        resultadoDiv.classList.add('oculto');
-        errorMsg.textContent = datos.mensaje;
-        errorMsg.classList.remove('oculto');
+        if (datos.exito) {
+          rutActualGuardado = datos.alumno.rut;
+          errorMsg.classList.add('oculto');
+          document.getElementById('nombreAlumno').textContent = datos.alumno.nombre;
+          document.getElementById('cursoAlumno').textContent = datos.alumno.curso;
+          document.getElementById('asistenciaAlumno').textContent = datos.alumno.asistencia;
+          document.getElementById('promedioAlumno').textContent = datos.alumno.promedioCalculado;
+          resultadoDiv.classList.remove('oculto');
+        } else {
+          resultadoDiv.classList.add('oculto');
+          errorMsg.textContent = datos.mensaje;
+          errorMsg.classList.remove('oculto');
+        }
+      } catch (err) {
+        alert('Error de conexión con el servidor.');
       }
     }
 
@@ -206,23 +222,27 @@
         asistencia: document.getElementById('nuevaAsistencia').value
       };
 
-      const respuesta = await fetch('/api/alumnos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosNuevoAlumno)
-      });
+      try {
+        const respuesta = await fetch('/api/alumnos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datosNuevoAlumno)
+        });
 
-      const resultado = await respuesta.json();
+        const resultado = await respuesta.json();
 
-      if (resultado.exito) {
-        mensajeForm.className = 'mensaje-exito';
-        mensajeForm.textContent = resultado.mensaje;
-        mensajeForm.classList.remove('oculto');
-        document.getElementById('formRegistro').reset();
-      } else {
-        mensajeForm.className = 'mensaje-error';
-        mensajeForm.textContent = resultado.mensaje;
-        mensajeForm.classList.remove('oculto');
+        if (resultado.exito) {
+          mensajeForm.className = 'mensaje-exito';
+          mensajeForm.textContent = resultado.mensaje;
+          mensajeForm.classList.remove('oculto');
+          document.getElementById('formRegistro').reset();
+        } else {
+          mensajeForm.className = 'mensaje-error';
+          mensajeForm.textContent = resultado.mensaje;
+          mensajeForm.classList.remove('oculto');
+        }
+      } catch (err) {
+        alert('Error al intentar registrar el estudiante.');
       }
     }
 
@@ -252,7 +272,7 @@
       if (resultado.exito) {
         alert(resultado.mensaje);
         document.getElementById('formEdicion').classList.add('oculto');
-        buscarAlumno(); // Recargamos los datos mostrados en pantalla
+        buscarAlumno();
       }
     }
 
@@ -273,6 +293,55 @@
         document.getElementById('rutInput').value = '';
       } else {
         alert(resultado.mensaje);
+      }
+    }
+
+    // 5. EXPORTAR: Generar y descargar archivo CSV compatible con Excel
+    async function descargarCSV() {
+      try {
+        // Petición a la lista completa de alumnos en la API REST
+        const respuesta = await fetch('/api/alumnos');
+        const resultado = await respuesta.json();
+
+        // Verificamos si la respuesta contiene alumnos
+        const listaAlumnos = resultado.datos || resultado.alumnos || resultado;
+
+        if (!Array.isArray(listaAlumnos) || listaAlumnos.length === 0) {
+          alert('⚠️ No hay estudiantes registrados en la base de datos.');
+          return;
+        }
+
+        // Crear encabezados CSV
+        let contenidoCSV = "ID;RUT;Nombre Completo;Curso;Notas;Asistencia\n";
+
+        // Iterar sobre cada registro
+        listaAlumnos.forEach(alumno => {
+          const id = alumno.id || '';
+          const rut = `"${alumno.rut || ''}"`;
+          const nombre = `"${alumno.nombre || ''}"`;
+          const curso = `"${alumno.curso || ''}"`;
+          const notas = `"${alumno.notas || ''}"`;
+          const asistencia = `"${alumno.asistencia || ''}"`;
+
+          contenidoCSV += `${id};${rut};${nombre};${curso};${notas};${asistencia}\n`;
+        });
+
+        // Crear Blob con BOM (\uFEFF) para codificación UTF-8 en Excel
+        const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `Nomina_Alumnos_Liceo_Asilva_${new Date().toISOString().slice(0,10)}.csv`;
+        
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+        URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error('Error al exportar CSV:', error);
+        alert('❌ Error al intentar conectar con la base de datos.');
       }
     }
   </script>
