@@ -3,21 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liceo Bicentenario Asilva - Acceso</title>
+  <title>Liceo Bicentenario Asilva - Gestión Escolar</title>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
-    .contenedor { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 550px; width: 100%; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .contenedor {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      max-width: 550px;
+      width: 100%;
+    }
     h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
     .subtitulo { color: #718096; font-size: 14px; margin-top: 0; }
-    .seccion { border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; background-color: #fafbfc; }
+    
+    .seccion {
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      background-color: #fafbfc;
+    }
+    h2 { font-size: 18px; color: #2b6cb0; margin-top: 0; }
+    
     .campo { margin-bottom: 12px; }
     label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #4a5568; }
-    input { width: 100%; padding: 9px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-    button { background-color: #2b6cb0; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+    input {
+      width: 100%;
+      padding: 9px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .buscador { display: flex; gap: 10px; margin-bottom: 15px; }
+    
+    button {
+      background-color: #2b6cb0;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
     button:hover { background-color: #2c5282; }
-    .btn-cerrar { background-color: #718096; margin-top: 10px; }
+    
+    .btn-excel {
+      background-color: #1d6f42;
+      width: 100%;
+      margin-top: 5px;
+    }
+    .btn-excel:hover { background-color: #155231; }
+
+    .btn-eliminar { background-color: #e53e3e; }
+    .btn-eliminar:hover { background-color: #c53030; }
+    
+    .btn-editar { background-color: #dd6b20; }
+    .btn-editar:hover { background-color: #c05621; }
+
+    .btn-cerrar { background-color: #718096; }
     .btn-cerrar:hover { background-color: #4a5568; }
+
+    .acciones-tarjeta {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .tarjeta-alumno {
+      border: 1px solid #cbd5e0;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #ffffff;
+      margin-top: 15px;
+    }
     .oculto { display: none; }
+    .destacado { font-weight: bold; color: #2b6cb0; }
+    .mensaje-exito { color: #2f855a; font-weight: bold; margin-top: 10px; }
     .mensaje-error { color: #e53e3e; font-weight: bold; margin-top: 10px; font-size: 13px; }
   </style>
 </head>
@@ -39,28 +109,103 @@
           <label>Contraseña:</label>
           <input type="password" id="loginPassword" placeholder="••••••••" required>
         </div>
-        <button type="submit">Ingresar al Sistema</button>
+        <button type="submit" style="width: 100%;">Ingresar al Sistema</button>
       </form>
       <p id="errorLogin" class="mensaje-error oculto"></p>
     </div>
 
-    <!-- 2. PANEL PRINCIPAL (CRUD) - Oculto hasta autenticarse -->
+    <!-- 2. PANEL PRINCIPAL COMPLETO (CRUD) -->
     <div id="panelPrincipal" class="oculto">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <span>Bienvenido/a, <strong id="nombreUsuarioActivo">Admin</strong></span>
-        <button onclick="cerrarSesion()" class="btn-cerrar" style="width: auto; padding: 6px 12px;">Cerrar Sesión</button>
+      
+      <!-- Cabecera de Usuario y Cerrar Sesión -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: #edf2f7; padding: 12px 15px; border-radius: 8px;">
+        <span>👤 Bienvenido/a: <strong id="nombreUsuarioActivo">Admin</strong></span>
+        <button onclick="cerrarSesion()" class="btn-cerrar" style="padding: 6px 12px; font-size: 12px;">Cerrar Sesión</button>
       </div>
 
+      <!-- SECCIÓN A: BUSCADOR Y EXPORTACIÓN -->
       <div class="seccion">
-        <h2>🔍 Gestionar Estudiantes</h2>
-        <p>Sesión activa y protegida con JWT.</p>
-        <!-- Aquí van tus módulos de búsqueda, registro y exportación a Excel -->
+        <h2>🔍 Buscar / Exportar Estudiantes</h2>
+        <div class="buscador">
+          <input type="text" id="rutInput" placeholder="Ej: 21.456.789-0">
+          <button onclick="buscarAlumno()">Buscar</button>
+        </div>
+
+        <button id="btnExportarCSV" class="btn-excel" onclick="descargarCSV()">
+          📊 Descargar Nómina Excel (CSV)
+        </button>
+
+        <div id="resultado" class="tarjeta-alumno oculto">
+          <h3 id="nombreAlumno" style="margin-top:0;">-</h3>
+          <p><strong>Curso:</strong> <span id="cursoAlumno">-</span></p>
+          <p><strong>Asistencia:</strong> <span id="asistenciaAlumno">-</span></p>
+          <p><strong>Promedio General:</strong> <span id="promedioAlumno" class="destacado">-</span></p>
+          
+          <div class="acciones-tarjeta">
+            <button class="btn-editar" onclick="modoEdicion()">✏️ Editar Datos</button>
+            <button class="btn-eliminar" onclick="eliminarAlumno()">🗑️ Eliminar</button>
+          </div>
+        </div>
+
+        <!-- Formulario de Edición -->
+        <div id="formEdicion" class="tarjeta-alumno oculto" style="background-color: #fffaf0; border-color: #fbd38d;">
+          <h3>Editar Estudiante</h3>
+          <div class="campo">
+            <label>Nuevo Nombre:</label>
+            <input type="text" id="editNombre">
+          </div>
+          <div class="campo">
+            <label>Nuevo Curso:</label>
+            <input type="text" id="editCurso">
+          </div>
+          <div class="campo">
+            <label>Nueva Asistencia:</label>
+            <input type="text" id="editAsistencia">
+          </div>
+          <button class="btn-editar" onclick="guardarEdicion()">Guardar Cambios</button>
+        </div>
+
+        <p id="errorMsg" class="mensaje-error oculto"></p>
       </div>
+
+      <!-- SECCIÓN B: REGISTRO DE NUEVO ALUMNO -->
+      <div class="seccion">
+        <h2>➕ Registrar Nuevo Estudiante</h2>
+        <form id="formRegistro" onsubmit="registrarAlumno(event)">
+          <div class="campo">
+            <label for="nuevoRut">RUT:</label>
+            <input type="text" id="nuevoRut" placeholder="Ej: 23.888.999-1" required>
+          </div>
+          <div class="campo">
+            <label for="nuevoNombre">Nombre Completo:</label>
+            <input type="text" id="nuevoNombre" placeholder="Ej: Mateo Silva Pérez" required>
+          </div>
+          <div class="campo">
+            <label for="nuevoCurso">Curso:</label>
+            <input type="text" id="nuevoCurso" placeholder="Ej: 3° Medio C" required>
+          </div>
+          <div class="campo">
+            <label for="nuevasNotas">Notas separadas por coma:</label>
+            <input type="text" id="nuevasNotas" placeholder="Ej: 6.5, 7.0, 5.8">
+          </div>
+          <div class="campo">
+            <label for="nuevaAsistencia">Asistencia (%):</label>
+            <input type="text" id="nuevaAsistencia" placeholder="Ej: 95%">
+          </div>
+          <button type="submit" style="width: 100%;">Guardar Estudiante</button>
+        </form>
+
+        <p id="mensajeForm" class="oculto"></p>
+      </div>
+
     </div>
+
   </div>
 
   <script>
-    // Verificar si ya existe una sesión guardada en el navegador
+    let rutActualGuardado = "";
+
+    // Revisa si ya hay token guardado al abrir la página
     window.onload = () => {
       const token = localStorage.getItem('token_liceo');
       const usuario = localStorage.getItem('usuario_liceo');
@@ -69,6 +214,7 @@
       }
     };
 
+    // FUNCIÓN LOGIN
     async function iniciarSesion(e) {
       e.preventDefault();
       const usuarioInput = document.getElementById('loginUsuario').value;
@@ -85,7 +231,6 @@
         const resultado = await respuesta.json();
 
         if (resultado.exito) {
-          // Guardar Token en el almacenamiento local del navegador (LocalStorage)
           localStorage.setItem('token_liceo', resultado.token);
           localStorage.setItem('usuario_liceo', resultado.usuario);
           mostrarPanelPrincipal(resultado.usuario);
@@ -111,18 +256,184 @@
       location.reload();
     }
 
-    // Para realizar peticiones protegidas (ejemplo POST o DELETE):
-    async function peticionProtegida(url, metodo, datos) {
+    // BUSCAR ALUMNO
+    async function buscarAlumno() {
+      const rut = document.getElementById('rutInput').value.trim();
+      const resultadoDiv = document.getElementById('resultado');
+      const errorMsg = document.getElementById('errorMsg');
+      document.getElementById('formEdicion').classList.add('oculto');
+
+      if (!rut) {
+        alert('Por favor ingresa un RUT válido');
+        return;
+      }
+
+      try {
+        const respuesta = await fetch(`/api/alumnos/rut/${rut}`);
+        const datos = await respuesta.json();
+
+        if (datos.exito) {
+          rutActualGuardado = datos.alumno.rut;
+          errorMsg.classList.add('oculto');
+          document.getElementById('nombreAlumno').textContent = datos.alumno.nombre;
+          document.getElementById('cursoAlumno').textContent = datos.alumno.curso;
+          document.getElementById('asistenciaAlumno').textContent = datos.alumno.asistencia;
+          document.getElementById('promedioAlumno').textContent = datos.alumno.promedioCalculado;
+          resultadoDiv.classList.remove('oculto');
+        } else {
+          resultadoDiv.classList.add('oculto');
+          errorMsg.textContent = datos.mensaje;
+          errorMsg.classList.remove('oculto');
+        }
+      } catch (err) {
+        alert('Error de conexión con el servidor.');
+      }
+    }
+
+    // REGISTRAR ALUMNO (Protegido con Token)
+    async function registrarAlumno(evento) {
+      evento.preventDefault();
+      const mensajeForm = document.getElementById('mensajeForm');
       const token = localStorage.getItem('token_liceo');
-      return await fetch(url, {
-        method: metodo,
-        headers: {
+      
+      const datosNuevoAlumno = {
+        rut: document.getElementById('nuevoRut').value,
+        nombre: document.getElementById('nuevoNombre').value,
+        curso: document.getElementById('nuevoCurso').value,
+        notas: document.getElementById('nuevasNotas').value,
+        asistencia: document.getElementById('nuevaAsistencia').value
+      };
+
+      try {
+        const respuesta = await fetch('/api/alumnos', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(datosNuevoAlumno)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.exito) {
+          mensajeForm.className = 'mensaje-exito';
+          mensajeForm.textContent = resultado.mensaje;
+          mensajeForm.classList.remove('oculto');
+          document.getElementById('formRegistro').reset();
+        } else {
+          mensajeForm.className = 'mensaje-error';
+          mensajeForm.textContent = resultado.mensaje;
+          mensajeForm.classList.remove('oculto');
+        }
+      } catch (err) {
+        alert('Error al intentar registrar el estudiante.');
+      }
+    }
+
+    // MODO EDICIÓN
+    function modoEdicion() {
+      document.getElementById('editNombre').value = document.getElementById('nombreAlumno').textContent;
+      document.getElementById('editCurso').value = document.getElementById('cursoAlumno').textContent;
+      document.getElementById('editAsistencia').value = document.getElementById('asistenciaAlumno').textContent;
+      document.getElementById('formEdicion').classList.remove('oculto');
+    }
+
+    // GUARDAR EDICIÓN (Protegido con Token)
+    async function guardarEdicion() {
+      const token = localStorage.getItem('token_liceo');
+      const datosEditados = {
+        nombre: document.getElementById('editNombre').value,
+        curso: document.getElementById('editCurso').value,
+        asistencia: document.getElementById('editAsistencia').value
+      };
+
+      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
+        method: 'PUT',
+        headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(datos)
+        body: JSON.stringify(datosEditados)
       });
+
+      const resultado = await respuesta.json();
+
+      if (resultado.exito) {
+        alert(resultado.mensaje);
+        document.getElementById('formEdicion').classList.add('oculto');
+        buscarAlumno();
+      }
+    }
+
+    // ELIMINAR ALUMNO (Protegido con Token)
+    async function eliminarAlumno() {
+      const token = localStorage.getItem('token_liceo');
+      const confirmacion = confirm(`¿Estás seguro de que deseas eliminar al estudiante con RUT ${rutActualGuardado}?`);
+      if (!confirmacion) return;
+
+      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const resultado = await respuesta.json();
+
+      if (resultado.exito) {
+        alert(resultado.mensaje);
+        document.getElementById('resultado').classList.add('oculto');
+        document.getElementById('rutInput').value = '';
+      } else {
+        alert(resultado.mensaje);
+      }
+    }
+
+    // DESCARGAR CSV
+    async function descargarCSV() {
+      try {
+        const respuesta = await fetch('/api/alumnos');
+        const resultado = await respuesta.json();
+
+        const listaAlumnos = resultado.datos || resultado.alumnos || resultado;
+
+        if (!Array.isArray(listaAlumnos) || listaAlumnos.length === 0) {
+          alert('⚠️ No hay estudiantes registrados en la base de datos.');
+          return;
+        }
+
+        let contenidoCSV = "ID;RUT;Nombre Completo;Curso;Notas;Asistencia\n";
+
+        listaAlumnos.forEach(alumno => {
+          const id = alumno.id || '';
+          const rut = `"${alumno.rut || ''}"`;
+          const nombre = `"${alumno.nombre || ''}"`;
+          const curso = `"${alumno.curso || ''}"`;
+          const notas = `"${alumno.notas || ''}"`;
+          const asistencia = `"${alumno.asistencia || ''}"`;
+
+          contenidoCSV += `${id};${rut};${nombre};${curso};${notas};${asistencia}\n`;
+        });
+
+        const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `Nomina_Alumnos_Liceo_Asilva_${new Date().toISOString().slice(0,10)}.csv`;
+        
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+        URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error('Error al exportar CSV:', error);
+        alert('❌ Error al intentar conectar con la base de datos.');
+      }
     }
   </script>
+
 </body>
 </html>
