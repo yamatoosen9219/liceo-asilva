@@ -18,7 +18,7 @@
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 550px;
+      max-width: 600px;
       width: 100%;
     }
     h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
@@ -35,7 +35,7 @@
     
     .campo { margin-bottom: 12px; }
     label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #4a5568; }
-    input {
+    input, select {
       width: 100%;
       padding: 9px;
       border: 1px solid #cbd5e0;
@@ -56,11 +56,7 @@
     }
     button:hover { background-color: #2c5282; }
     
-    .btn-excel {
-      background-color: #1d6f42;
-      width: 100%;
-      margin-top: 5px;
-    }
+    .btn-excel { background-color: #1d6f42; width: 100%; margin-top: 5px; }
     .btn-excel:hover { background-color: #155231; }
 
     .btn-eliminar { background-color: #e53e3e; }
@@ -72,11 +68,7 @@
     .btn-cerrar { background-color: #718096; }
     .btn-cerrar:hover { background-color: #4a5568; }
 
-    .acciones-tarjeta {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
+    .acciones-tarjeta { display: flex; gap: 10px; margin-top: 15px; }
 
     .tarjeta-alumno {
       border: 1px solid #cbd5e0;
@@ -89,6 +81,16 @@
     .destacado { font-weight: bold; color: #2b6cb0; }
     .mensaje-exito { color: #2f855a; font-weight: bold; margin-top: 10px; }
     .mensaje-error { color: #e53e3e; font-weight: bold; margin-top: 10px; font-size: 13px; }
+    
+    .badge-rol {
+      background-color: #e2e8f0;
+      color: #2d3748;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -97,7 +99,7 @@
     <h1>Liceo Bicentenario Asilva 🏫</h1>
     <p class="subtitulo">Plataforma Digital de Gestión Escolar</p>
 
-    <!-- 1. PANTALLA DE LOGIN -->
+    <!-- 1. LOGIN -->
     <div id="pantallaLogin" class="seccion">
       <h2>🔐 Iniciar Sesión</h2>
       <form onsubmit="iniciarSesion(event)">
@@ -114,16 +116,19 @@
       <p id="errorLogin" class="mensaje-error oculto"></p>
     </div>
 
-    <!-- 2. PANEL PRINCIPAL COMPLETO (CRUD) -->
+    <!-- 2. PANEL PRINCIPAL (CRUD) -->
     <div id="panelPrincipal" class="oculto">
       
-      <!-- Cabecera de Usuario y Cerrar Sesión -->
+      <!-- Cabecera -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: #edf2f7; padding: 12px 15px; border-radius: 8px;">
-        <span>👤 Bienvenido/a: <strong id="nombreUsuarioActivo">Admin</strong></span>
+        <div>
+          👤 <strong id="nombreUsuarioActivo">Admin</strong>
+          <span id="badgeRolActivo" class="badge-rol">admin</span>
+        </div>
         <button onclick="cerrarSesion()" class="btn-cerrar" style="padding: 6px 12px; font-size: 12px;">Cerrar Sesión</button>
       </div>
 
-      <!-- SECCIÓN A: BUSCADOR Y EXPORTACIÓN -->
+      <!-- SECCIÓN A: BUSCADOR -->
       <div class="seccion">
         <h2>🔍 Buscar / Exportar Estudiantes</h2>
         <div class="buscador">
@@ -143,7 +148,7 @@
           
           <div class="acciones-tarjeta">
             <button class="btn-editar" onclick="modoEdicion()">✏️ Editar Datos</button>
-            <button class="btn-eliminar" onclick="eliminarAlumno()">🗑️ Eliminar</button>
+            <button id="btnEliminarAlumno" class="btn-eliminar" onclick="eliminarAlumno()">🗑️ Eliminar</button>
           </div>
         </div>
 
@@ -168,7 +173,7 @@
         <p id="errorMsg" class="mensaje-error oculto"></p>
       </div>
 
-      <!-- SECCIÓN B: REGISTRO DE NUEVO ALUMNO -->
+      <!-- SECCIÓN B: REGISTRO DE ALUMNO -->
       <div class="seccion">
         <h2>➕ Registrar Nuevo Estudiante</h2>
         <form id="formRegistro" onsubmit="registrarAlumno(event)">
@@ -194,27 +199,48 @@
           </div>
           <button type="submit" style="width: 100%;">Guardar Estudiante</button>
         </form>
-
         <p id="mensajeForm" class="oculto"></p>
       </div>
 
-    </div>
+      <!-- SECCIÓN C: GESTIÓN DE USUARIOS (SOLO VISIBLE PARA ADMIN) -->
+      <div id="seccionUsuarios" class="seccion oculto">
+        <h2>👥 Gestión de Personal (Solo Admin)</h2>
+        <form onsubmit="crearUsuario(event)">
+          <div class="campo">
+            <label>Nombre de Usuario:</label>
+            <input type="text" id="nuevoUserNombre" placeholder="Ej: prof_gonzalez" required>
+          </div>
+          <div class="campo">
+            <label>Contraseña:</label>
+            <input type="password" id="nuevoUserPass" placeholder="••••••••" required>
+          </div>
+          <div class="campo">
+            <label>Rol de Usuario:</label>
+            <select id="nuevoUserRol">
+              <option value="profesor">Profesor / Docente</option>
+              <option value="admin">Administrador / UTP</option>
+            </select>
+          </div>
+          <button type="submit" style="width: 100%; background-color: #2b6cb0;">Crear Cuenta de Usuario</button>
+        </form>
+        <p id="msgUserForm" class="oculto"></p>
+      </div>
 
+    </div>
   </div>
 
   <script>
     let rutActualGuardado = "";
 
-    // Revisa si ya hay token guardado al abrir la página
     window.onload = () => {
       const token = localStorage.getItem('token_liceo');
       const usuario = localStorage.getItem('usuario_liceo');
+      const rol = localStorage.getItem('rol_liceo');
       if (token) {
-        mostrarPanelPrincipal(usuario);
+        mostrarPanelPrincipal(usuario, rol);
       }
     };
 
-    // FUNCIÓN LOGIN
     async function iniciarSesion(e) {
       e.preventDefault();
       const usuarioInput = document.getElementById('loginUsuario').value;
@@ -233,7 +259,8 @@
         if (resultado.exito) {
           localStorage.setItem('token_liceo', resultado.token);
           localStorage.setItem('usuario_liceo', resultado.usuario);
-          mostrarPanelPrincipal(resultado.usuario);
+          localStorage.setItem('rol_liceo', resultado.rol);
+          mostrarPanelPrincipal(resultado.usuario, resultado.rol);
         } else {
           errorDiv.textContent = resultado.mensaje;
           errorDiv.classList.remove('oculto');
@@ -244,19 +271,63 @@
       }
     }
 
-    function mostrarPanelPrincipal(nombreUsuario) {
+    function mostrarPanelPrincipal(nombreUsuario, rol) {
       document.getElementById('pantallaLogin').classList.add('oculto');
       document.getElementById('panelPrincipal').classList.remove('oculto');
       document.getElementById('nombreUsuarioActivo').textContent = nombreUsuario;
+      document.getElementById('badgeRolActivo').textContent = rol;
+
+      // Si es admin, mostramos la sección de crear usuarios y borrar alumnos
+      if (rol === 'admin') {
+        document.getElementById('seccionUsuarios').classList.remove('oculto');
+        document.getElementById('btnEliminarAlumno').classList.remove('oculto');
+      } else {
+        document.getElementById('seccionUsuarios').classList.add('oculto');
+        document.getElementById('btnEliminarAlumno').classList.add('oculto');
+      }
     }
 
     function cerrarSesion() {
-      localStorage.removeItem('token_liceo');
-      localStorage.removeItem('usuario_liceo');
+      localStorage.clear();
       location.reload();
     }
 
-    // BUSCAR ALUMNO
+    // CREAR USUARIO (Solo Admin)
+    async function crearUsuario(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('token_liceo');
+      const msg = document.getElementById('msgUserForm');
+
+      const datos = {
+        usuario: document.getElementById('nuevoUserNombre').value,
+        password: document.getElementById('nuevoUserPass').value,
+        rol: document.getElementById('nuevoUserRol').value
+      };
+
+      try {
+        const resp = await fetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(datos)
+        });
+
+        const res = await resp.json();
+        msg.textContent = res.mensaje;
+        msg.className = res.exito ? 'mensaje-exito' : 'mensaje-error';
+        msg.classList.remove('oculto');
+
+        if (res.exito) {
+          document.getElementById('nuevoUserNombre').value = '';
+          document.getElementById('nuevoUserPass').value = '';
+        }
+      } catch (err) {
+        alert('Error al crear usuario.');
+      }
+    }
+
     async function buscarAlumno() {
       const rut = document.getElementById('rutInput').value.trim();
       const resultadoDiv = document.getElementById('resultado');
@@ -286,11 +357,10 @@
           errorMsg.classList.remove('oculto');
         }
       } catch (err) {
-        alert('Error de conexión con el servidor.');
+        alert('Error de conexión.');
       }
     }
 
-    // REGISTRAR ALUMNO (Protegido con Token)
     async function registrarAlumno(evento) {
       evento.preventDefault();
       const mensajeForm = document.getElementById('mensajeForm');
@@ -327,11 +397,10 @@
           mensajeForm.classList.remove('oculto');
         }
       } catch (err) {
-        alert('Error al intentar registrar el estudiante.');
+        alert('Error al registrar estudiante.');
       }
     }
 
-    // MODO EDICIÓN
     function modoEdicion() {
       document.getElementById('editNombre').value = document.getElementById('nombreAlumno').textContent;
       document.getElementById('editCurso').value = document.getElementById('cursoAlumno').textContent;
@@ -339,7 +408,6 @@
       document.getElementById('formEdicion').classList.remove('oculto');
     }
 
-    // GUARDAR EDICIÓN (Protegido con Token)
     async function guardarEdicion() {
       const token = localStorage.getItem('token_liceo');
       const datosEditados = {
@@ -366,17 +434,14 @@
       }
     }
 
-    // ELIMINAR ALUMNO (Protegido con Token)
     async function eliminarAlumno() {
       const token = localStorage.getItem('token_liceo');
-      const confirmacion = confirm(`¿Estás seguro de que deseas eliminar al estudiante con RUT ${rutActualGuardado}?`);
+      const confirmacion = confirm(`¿Estás seguro de eliminar al alumno con RUT ${rutActualGuardado}?`);
       if (!confirmacion) return;
 
       const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       const resultado = await respuesta.json();
@@ -390,35 +455,24 @@
       }
     }
 
-    // DESCARGAR CSV
     async function descargarCSV() {
       try {
         const respuesta = await fetch('/api/alumnos');
-        const resultado = await respuesta.json();
-
-        const listaAlumnos = resultado.datos || resultado.alumnos || resultado;
+        const listaAlumnos = await respuesta.json();
 
         if (!Array.isArray(listaAlumnos) || listaAlumnos.length === 0) {
-          alert('⚠️ No hay estudiantes registrados en la base de datos.');
+          alert('⚠️ No hay estudiantes registrados.');
           return;
         }
 
         let contenidoCSV = "ID;RUT;Nombre Completo;Curso;Notas;Asistencia\n";
 
         listaAlumnos.forEach(alumno => {
-          const id = alumno.id || '';
-          const rut = `"${alumno.rut || ''}"`;
-          const nombre = `"${alumno.nombre || ''}"`;
-          const curso = `"${alumno.curso || ''}"`;
-          const notas = `"${alumno.notas || ''}"`;
-          const asistencia = `"${alumno.asistencia || ''}"`;
-
-          contenidoCSV += `${id};${rut};${nombre};${curso};${notas};${asistencia}\n`;
+          contenidoCSV += `${alumno.id || ''};"${alumno.rut || ''}";"${alumno.nombre || ''}";"${alumno.curso || ''}";"${alumno.notas || ''}";"${alumno.asistencia || ''}"\n`;
         });
 
         const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        
         const enlace = document.createElement('a');
         enlace.href = url;
         enlace.download = `Nomina_Alumnos_Liceo_Asilva_${new Date().toISOString().slice(0,10)}.csv`;
@@ -427,10 +481,8 @@
         enlace.click();
         document.body.removeChild(enlace);
         URL.revokeObjectURL(url);
-
       } catch (error) {
-        console.error('Error al exportar CSV:', error);
-        alert('❌ Error al intentar conectar con la base de datos.');
+        alert('❌ Error al exportar CSV.');
       }
     }
   </script>
