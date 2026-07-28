@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liceo Bicentenario Asilva - CRUD</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .contenedor {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      max-width: 550px;
+      width: 100%;
+    }
+    h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
+    p.subtitulo { color: #718096; font-size: 14px; margin-top: 0; }
+    
+    .seccion {
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      background-color: #fafbfc;
+    }
+    h2 { font-size: 18px; color: #2b6cb0; margin-top: 0; }
+    
+    .campo { margin-bottom: 12px; }
+    label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #4a5568; }
+    input {
+      width: 100%;
+      padding: 9px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .buscador { display: flex; gap: 10px; }
+    
+    button {
+      background-color: #2b6cb0;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background-color: #2c5282; }
+    
+    .btn-eliminar { background-color: #e53e3e; }
+    .btn-eliminar:hover { background-color: #c53030; }
+    
+    .btn-editar { background-color: #dd6b20; }
+    .btn-editar:hover { background-color: #c05621; }
+
+    .acciones-tarjeta {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .tarjeta-alumno {
+      border: 1px solid #cbd5e0;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #ffffff;
+      margin-top: 15px;
+    }
+    .oculto { display: none; }
+    .destacado { font-weight: bold; color: #2b6cb0; }
+    .mensaje-exito { color: #2f855a; font-weight: bold; margin-top: 10px; }
+    .mensaje-error { color: #e53e3e; font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <h1>Liceo Bicentenario Asilva 🏫</h1>
+    <p class="subtitulo">Gestión de Estudiantes (CRUD Completo)</p>
+
+    <!-- 1. BUSCADOR Y ACCIONES (GET, PUT, DELETE) -->
+    <div class="seccion">
+      <h2>🔍 Buscar Estudiante</h2>
+      <div class="buscador">
+        <input type="text" id="rutInput" placeholder="Ej: 21.456.789-0">
+        <button onclick="buscarAlumno()">Buscar</button>
+      </div>
+
+      <div id="resultado" class="tarjeta-alumno oculto">
+        <h3 id="nombreAlumno" style="margin-top:0;">-</h3>
+        <p><strong>Curso:</strong> <span id="cursoAlumno">-</span></p>
+        <p><strong>Asistencia:</strong> <span id="asistenciaAlumno">-</span></p>
+        <p><strong>Promedio General:</strong> <span id="promedioAlumno" class="destacado">-</span></p>
+        
+        <div class="acciones-tarjeta">
+          <button class="btn-editar" onclick="modoEdicion()">✏️ Editar Datos</button>
+          <button class="btn-eliminar" onclick="eliminarAlumno()">🗑️ Eliminar</button>
+        </div>
+      </div>
+
+      <!-- FORMULARIO DE EDICIÓN RÁPIDA (PUT) -->
+      <div id="formEdicion" class="tarjeta-alumno oculto" style="background-color: #fffaf0; border-color: #fbd38d;">
+        <h3>Editar Estudiante</h3>
+        <div class="campo">
+          <label>Nuevo Nombre:</label>
+          <input type="text" id="editNombre">
+        </div>
+        <div class="campo">
+          <label>Nuevo Curso:</label>
+          <input type="text" id="editCurso">
+        </div>
+        <div class="campo">
+          <label>Nueva Asistencia:</label>
+          <input type="text" id="editAsistencia">
+        </div>
+        <button class="btn-editar" onclick="guardarEdicion()">Guardar Cambios</button>
+      </div>
+
+      <p id="errorMsg" class="mensaje-error oculto"></p>
+    </div>
+
+    <!-- 2. FORMULARIO DE REGISTRO (POST) -->
+    <div class="seccion">
+      <h2>➕ Registrar Nuevo Estudiante</h2>
+      <form id="formRegistro" onsubmit="registrarAlumno(event)">
+        <div class="campo">
+          <label for="nuevoRut">RUT:</label>
+          <input type="text" id="nuevoRut" placeholder="Ej: 23.888.999-1" required>
+        </div>
+        <div class="campo">
+          <label for="nuevoNombre">Nombre Completo:</label>
+          <input type="text" id="nuevoNombre" placeholder="Ej: Mateo Silva Pérez" required>
+        </div>
+        <div class="campo">
+          <label for="nuevoCurso">Curso:</label>
+          <input type="text" id="nuevoCurso" placeholder="Ej: 3° Medio C" required>
+        </div>
+        <div class="campo">
+          <label for="nuevasNotas">Notas separadas por coma:</label>
+          <input type="text" id="nuevasNotas" placeholder="Ej: 6.5, 7.0, 5.8">
+        </div>
+        <div class="campo">
+          <label for="nuevaAsistencia">Asistencia (%):</label>
+          <input type="text" id="nuevaAsistencia" placeholder="Ej: 95%">
+        </div>
+        <button type="submit" style="width: 100%;">Guardar Estudiante</button>
+      </form>
+
+      <p id="mensajeForm" class="oculto"></p>
+    </div>
+
+  </div>
+
+  <script>
+    let rutActualGuardado = "";
+
+    // 1. GET: Buscar alumno por RUT
+    async function buscarAlumno() {
+      const rut = document.getElementById('rutInput').value.trim();
+      const resultadoDiv = document.getElementById('resultado');
+      const errorMsg = document.getElementById('errorMsg');
+      document.getElementById('formEdicion').classList.add('oculto');
+
+      if (!rut) {
+        alert('Por favor ingresa un RUT válido');
+        return;
+      }
+
+      const respuesta = await fetch(`/api/alumnos/rut/${rut}`);
+      const datos = await respuesta.json();
+
+      if (datos.exito) {
+        rutActualGuardado = datos.alumno.rut; // Guardamos el RUT actual
+        errorMsg.classList.add('oculto');
+        document.getElementById('nombreAlumno').textContent = datos.alumno.nombre;
+        document.getElementById('cursoAlumno').textContent = datos.alumno.curso;
+        document.getElementById('asistenciaAlumno').textContent = datos.alumno.asistencia;
+        document.getElementById('promedioAlumno').textContent = datos.alumno.promedioCalculado;
+        resultadoDiv.classList.remove('oculto');
+      } else {
+        resultadoDiv.classList.add('oculto');
+        errorMsg.textContent = datos.mensaje;
+        errorMsg.classList.remove('oculto');
+      }
+    }
+
+    // 2. POST: Registrar alumno
+    async function registrarAlumno(evento) {
+      evento.preventDefault();
+      const mensajeForm = document.getElementById('mensajeForm');
+      
+      const datosNuevoAlumno = {
+        rut: document.getElementById('nuevoRut').value,
+        nombre: document.getElementById('nuevoNombre').value,
+        curso: document.getElementById('nuevoCurso').value,
+        notas: document.getElementById('nuevasNotas').value,
+        asistencia: document.getElementById('nuevaAsistencia').value
+      };
+
+      const respuesta = await fetch('/api/alumnos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosNuevoAlumno)
+      });
+
+      const resultado = await respuesta.json();
+
+      if (resultado.exito) {
+        mensajeForm.className = 'mensaje-exito';
+        mensajeForm.textContent = resultado.mensaje;
+        mensajeForm.classList.remove('oculto');
+        document.getElementById('formRegistro').reset();
+      } else {
+        mensajeForm.className = 'mensaje-error';
+        mensajeForm.textContent = resultado.mensaje;
+        mensajeForm.classList.remove('oculto');
+      }
+    }
+
+    // 3. PUT: Abrir panel de edición y guardar cambios
+    function modoEdicion() {
+      document.getElementById('editNombre').value = document.getElementById('nombreAlumno').textContent;
+      document.getElementById('editCurso').value = document.getElementById('cursoAlumno').textContent;
+      document.getElementById('editAsistencia').value = document.getElementById('asistenciaAlumno').textContent;
+      document.getElementById('formEdicion').classList.remove('oculto');
+    }
+
+    async function guardarEdicion() {
+      const datosEditados = {
+        nombre: document.getElementById('editNombre').value,
+        curso: document.getElementById('editCurso').value,
+        asistencia: document.getElementById('editAsistencia').value
+      };
+
+      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosEditados)
+      });
+
+      const resultado = await respuesta.json();
+
+      if (resultado.exito) {
+        alert(resultado.mensaje);
+        document.getElementById('formEdicion').classList.add('oculto');
+        buscarAlumno(); // Recargamos los datos mostrados en pantalla
+      }
+    }
+
+    // 4. DELETE: Eliminar un estudiante
+    async function eliminarAlumno() {
+      const confirmacion = confirm(`¿Estás seguro de que deseas eliminar al estudiante con RUT ${rutActualGuardado}?`);
+      if (!confirmacion) return;
+
+      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
+        method: 'DELETE'
+      });
+
+      const resultado = await respuesta.json();
+
+      if (resultado.exito) {
+        alert(resultado.mensaje);
+        document.getElementById('resultado').classList.add('oculto');
+        document.getElementById('rutInput').value = '';
+      } else {
+        alert(resultado.mensaje);
+      }
+    }
+  </script>
+
+</body>
+</html>
