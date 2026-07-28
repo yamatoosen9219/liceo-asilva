@@ -3,288 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liceo Bicentenario Asilva - Gestión Escolar</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-    }
-    .contenedor {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px;
-      width: 100%;
-    }
-    h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
-    .subtitulo { color: #718096; font-size: 14px; margin-top: 0; }
-    
-    .seccion {
-      border: 1px solid #e2e8f0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-      background-color: #fafbfc;
-    }
-    h2 { font-size: 18px; color: #2b6cb0; margin-top: 0; }
-    
-    .campo { margin-bottom: 12px; }
-    label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #4a5568; }
-    input, select {
-      width: 100%;
-      padding: 9px;
-      border: 1px solid #cbd5e0;
-      border-radius: 6px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .buscador { display: flex; gap: 10px; margin-bottom: 15px; }
-    
-    button {
-      background-color: #2b6cb0;
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover { background-color: #2c5282; }
-    
-    .btn-excel { background-color: #1d6f42; width: 100%; margin-top: 5px; }
-    .btn-excel:hover { background-color: #155231; }
-
-    .btn-eliminar { background-color: #e53e3e; }
-    .btn-eliminar:hover { background-color: #c53030; }
-    
-    .btn-editar { background-color: #dd6b20; }
-    .btn-editar:hover { background-color: #c05621; }
-
-    .btn-cerrar { background-color: #718096; }
-    .btn-cerrar:hover { background-color: #4a5568; }
-
-    .acciones-tarjeta { display: flex; gap: 10px; margin-top: 15px; }
-
-    .tarjeta-alumno {
-      border: 1px solid #cbd5e0;
-      padding: 15px;
-      border-radius: 8px;
-      background-color: #ffffff;
-      margin-top: 15px;
-    }
-    .oculto { display: none; }
-    .destacado { font-weight: bold; color: #2b6cb0; }
-    .mensaje-exito { color: #2f855a; font-weight: bold; margin-top: 10px; }
-    .mensaje-error { color: #e53e3e; font-weight: bold; margin-top: 10px; font-size: 13px; }
-    
-    .badge-rol {
-      background-color: #e2e8f0;
-      color: #2d3748;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-  </style>
+  <title>Liceo Bicentenario Asilva | Plataforma SaaS</title>
+  <!-- Tailwind CSS CDN para diseño moderno de alto nivel -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para visualizaciones gráficas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
 
-  <div class="contenedor">
-    <h1>Liceo Bicentenario Asilva 🏫</h1>
-    <p class="subtitulo">Plataforma Digital de Gestión Escolar</p>
-
-    <!-- 1. LOGIN -->
-    <div id="pantallaLogin" class="seccion">
-      <h2>🔐 Iniciar Sesión</h2>
-      <form onsubmit="iniciarSesion(event)">
-        <div class="campo">
-          <label>Usuario:</label>
-          <input type="text" id="loginUsuario" placeholder="Ej: admin" required>
+  <!-- PANTALLA LOGIN -->
+  <div id="pantallaLogin" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border border-slate-700">
+      <div class="text-center mb-6">
+        <div class="inline-flex p-3 bg-blue-100 text-blue-600 rounded-full mb-3">
+          <i data-lucide="graduation-cap" class="w-8 h-8"></i>
         </div>
-        <div class="campo">
-          <label>Contraseña:</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required>
-        </div>
-        <button type="submit" style="width: 100%;">Ingresar al Sistema</button>
-      </form>
-      <p id="errorLogin" class="mensaje-error oculto"></p>
-    </div>
+        <h1 class="text-2xl font-bold text-slate-900">Liceo Asilva</h1>
+        <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Plataforma de Gestión Escolar</p>
+      </div>
 
-    <!-- 2. PANEL PRINCIPAL (CRUD) -->
-    <div id="panelPrincipal" class="oculto">
-      
-      <!-- Cabecera -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: #edf2f7; padding: 12px 15px; border-radius: 8px;">
+      <form onsubmit="iniciarSesion(event)" class="space-y-4">
         <div>
-          👤 <strong id="nombreUsuarioActivo">Admin</strong>
-          <span id="badgeRolActivo" class="badge-rol">admin</span>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">USUARIO</label>
+          <input type="text" id="loginUsuario" placeholder="Ej: admin" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm" required>
         </div>
-        <button onclick="cerrarSesion()" class="btn-cerrar" style="padding: 6px 12px; font-size: 12px;">Cerrar Sesión</button>
-      </div>
-
-      <!-- SECCIÓN A: BUSCADOR -->
-      <div class="seccion">
-        <h2>🔍 Buscar / Exportar Estudiantes</h2>
-        <div class="buscador">
-          <input type="text" id="rutInput" placeholder="Ej: 21.456.789-0">
-          <button onclick="buscarAlumno()">Buscar</button>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">CONTRASEÑA</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm" required>
         </div>
-
-        <button id="btnExportarCSV" class="btn-excel" onclick="descargarCSV()">
-          📊 Descargar Nómina Excel (CSV)
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition duration-200 text-sm">
+          Ingresar al Sistema
         </button>
+      </form>
+      <p id="errorLogin" class="mt-4 text-xs text-red-500 text-center hidden font-medium"></p>
+    </div>
+  </div>
 
-        <div id="resultado" class="tarjeta-alumno oculto">
-          <h3 id="nombreAlumno" style="margin-top:0;">-</h3>
-          <p><strong>Curso:</strong> <span id="cursoAlumno">-</span></p>
-          <p><strong>Asistencia:</strong> <span id="asistenciaAlumno">-</span></p>
-          <p><strong>Promedio General:</strong> <span id="promedioAlumno" class="destacado">-</span></p>
-          
-          <div class="acciones-tarjeta">
-            <button class="btn-editar" onclick="modoEdicion()">✏️ Editar Datos</button>
-            <button id="btnEliminarAlumno" class="btn-eliminar" onclick="eliminarAlumno()">🗑️ Eliminar</button>
+  <!-- PLATAFORMA DASHBOARD MODULAR -->
+  <div id="panelPrincipal" class="min-h-screen flex hidden">
+    
+    <!-- SIDEBAR DE NAVEGACIÓN MÓDULOS -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-4 shadow-xl">
+      <div>
+        <!-- LOGO INSTITUCIONAL -->
+        <div class="flex items-center gap-3 px-3 py-4 border-b border-slate-800 mb-6">
+          <i data-lucide="building-2" class="w-7 h-7 text-blue-400"></i>
+          <div>
+            <h2 class="font-bold text-white text-base leading-tight">Liceo Asilva</h2>
+            <span class="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded font-mono">SaaS v2.0</span>
           </div>
         </div>
 
-        <!-- Formulario de Edición -->
-        <div id="formEdicion" class="tarjeta-alumno oculto" style="background-color: #fffaf0; border-color: #fbd38d;">
-          <h3>Editar Estudiante</h3>
-          <div class="campo">
-            <label>Nuevo Nombre:</label>
-            <input type="text" id="editNombre">
+        <!-- MENU ITEMS -->
+        <nav class="space-y-1">
+          <button onclick="cambiarModulo('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </button>
+          <button onclick="cambiarModulo('alumnos')" id="nav-alumnos" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i data-lucide="users" class="w-4 h-4"></i> Alumnos & Notas
+          </button>
+          <button onclick="cambiarModulo('ensayos')" id="nav-ensayos" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i data-lucide="file-check-2" class="w-4 h-4"></i> Ensayos Online
+          </button>
+          <button onclick="cambiarModulo('usuarios')" id="nav-usuarios" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition hidden">
+            <i data-lucide="user-cog" class="w-4 h-4"></i> Personal / Usuarios
+          </button>
+        </nav>
+      </div>
+
+      <!-- PERFIL DE USUARIO Y LOGOUT -->
+      <div class="border-t border-slate-800 pt-4 flex items-center justify-between">
+        <div class="text-xs">
+          <p class="font-bold text-white" id="nombreUsuarioActivo">Admin</p>
+          <span id="badgeRolActivo" class="text-[10px] text-blue-400 uppercase font-semibold">ADMIN</span>
+        </div>
+        <button onclick="cerrarSesion()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition" title="Cerrar Sesión">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 p-8 overflow-y-auto">
+      
+      <!-- MÓDULO 1: DASHBOARD CON MÉTRICAS Y GRÁFICO -->
+      <section id="mod-dashboard" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Panel Rendimiento Institucional</h1>
+            <p class="text-xs text-slate-500">Métricas clave en tiempo real</p>
           </div>
-          <div class="campo">
-            <label>Nuevo Curso:</label>
-            <input type="text" id="editCurso">
-          </div>
-          <div class="campo">
-            <label>Nueva Asistencia:</label>
-            <input type="text" id="editAsistencia">
-          </div>
-          <button class="btn-editar" onclick="guardarEdicion()">Guardar Cambios</button>
         </div>
 
-        <p id="errorMsg" class="mensaje-error oculto"></p>
-      </div>
+        <!-- TARJETAS Kpis -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase">Matrícula Total</p>
+              <h3 id="kpiAlumnos" class="text-3xl font-extrabold text-slate-800 mt-1">0</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="users" class="w-6 h-6"></i></div>
+          </div>
 
-      <!-- SECCIÓN B: REGISTRO DE ALUMNO -->
-      <div class="seccion">
-        <h2>➕ Registrar Nuevo Estudiante</h2>
-        <form id="formRegistro" onsubmit="registrarAlumno(event)">
-          <div class="campo">
-            <label for="nuevoRut">RUT:</label>
-            <input type="text" id="nuevoRut" placeholder="Ej: 23.888.999-1" required>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase">Promedio General</p>
+              <h3 id="kpiPromedio" class="text-3xl font-extrabold text-emerald-600 mt-1">0.0</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
           </div>
-          <div class="campo">
-            <label for="nuevoNombre">Nombre Completo:</label>
-            <input type="text" id="nuevoNombre" placeholder="Ej: Mateo Silva Pérez" required>
-          </div>
-          <div class="campo">
-            <label for="nuevoCurso">Curso:</label>
-            <input type="text" id="nuevoCurso" placeholder="Ej: 3° Medio C" required>
-          </div>
-          <div class="campo">
-            <label for="nuevasNotas">Notas separadas por coma:</label>
-            <input type="text" id="nuevasNotas" placeholder="Ej: 6.5, 7.0, 5.8">
-          </div>
-          <div class="campo">
-            <label for="nuevaAsistencia">Asistencia (%):</label>
-            <input type="text" id="nuevaAsistencia" placeholder="Ej: 95%">
-          </div>
-          <button type="submit" style="width: 100%;">Guardar Estudiante</button>
-        </form>
-        <p id="mensajeForm" class="oculto"></p>
-      </div>
 
-      <!-- SECCIÓN C: GESTIÓN DE USUARIOS (SOLO VISIBLE PARA ADMIN) -->
-      <div id="seccionUsuarios" class="seccion oculto">
-        <h2>👥 Gestión de Personal (Solo Admin)</h2>
-        <form onsubmit="crearUsuario(event)">
-          <div class="campo">
-            <label>Nombre de Usuario:</label>
-            <input type="text" id="nuevoUserNombre" placeholder="Ej: prof_gonzalez" required>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase">Ensayos Rendidos</p>
+              <h3 id="kpiEnsayos" class="text-3xl font-extrabold text-indigo-600 mt-1">0</h3>
+            </div>
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i data-lucide="file-spreadsheets" class="w-6 h-6"></i></div>
           </div>
-          <div class="campo">
-            <label>Contraseña:</label>
-            <input type="password" id="nuevoUserPass" placeholder="••••••••" required>
+        </div>
+
+        <!-- GRÁFICO DE RENDIMIENTO -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-800 mb-4">Rendimiento Estimado por Asignatura</h3>
+          <div class="h-64">
+            <canvas id="graficoRendimiento"></canvas>
           </div>
-          <div class="campo">
-            <label>Rol de Usuario:</label>
-            <select id="nuevoUserRol">
+        </div>
+      </section>
+
+      <!-- MÓDULO 2: GESTIÓN DE ALUMNOS -->
+      <section id="mod-alumnos" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-slate-900">Gestión de Estudiantes</h1>
+          <button onclick="descargarCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> Descargar Excel (CSV)
+          </button>
+        </div>
+
+        <!-- BÚSQUEDA -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-3">
+          <input type="text" id="rutInput" placeholder="Ingrese RUT alumno (ej: 21.456.789-0)" class="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+          <button onclick="buscarAlumno()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm">Buscar</button>
+        </div>
+
+        <!-- RESULTADO BÚSQUEDA -->
+        <div id="resultadoAlumno" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hidden space-y-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 id="nombreAlumno" class="text-xl font-bold text-slate-800"></h3>
+              <p class="text-xs text-slate-500">Curso: <span id="cursoAlumno" class="font-semibold text-slate-700"></span></p>
+            </div>
+            <span id="promedioAlumno" class="text-2xl font-black text-blue-600">--</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-3 rounded-lg">
+            <div><strong>Asistencia:</strong> <span id="asistenciaAlumno"></span></div>
+            <div><strong>Estado:</strong> <span class="text-emerald-600 font-bold">Regular</span></div>
+          </div>
+
+          <div class="flex gap-2">
+            <button id="btnEliminarAlumno" onclick="eliminarAlumno()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold">Eliminar</button>
+          </div>
+        </div>
+
+        <!-- FORMULARIO REGISTRO -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-slate-800">Registrar Nuevo Alumno</h3>
+          <form onsubmit="registrarAlumno(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="nuevoRut" placeholder="RUT (ej: 23.888.999-1)" class="p-2.5 border rounded-lg text-sm" required>
+            <input type="text" id="nuevoNombre" placeholder="Nombre Completo" class="p-2.5 border rounded-lg text-sm" required>
+            <input type="text" id="nuevoCurso" placeholder="Curso (ej: 3° Medio B)" class="p-2.5 border rounded-lg text-sm" required>
+            <input type="text" id="nuevasNotas" placeholder="Notas (ej: 6.5, 7.0, 5.8)" class="p-2.5 border rounded-lg text-sm">
+            <input type="text" id="nuevaAsistencia" placeholder="Asistencia (ej: 95%)" class="p-2.5 border rounded-lg text-sm">
+            <button type="submit" class="md:col-span-2 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg text-sm">Guardar Estudiante</button>
+          </form>
+          <p id="mensajeForm" class="text-xs font-semibold hidden"></p>
+        </div>
+      </section>
+
+      <!-- MÓDULO 3: ENSAYOS Y EXÁMENES ONLINE -->
+      <section id="mod-ensayos" class="space-y-6 hidden">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Evaluaciones & Ensayos Online</h1>
+          <p class="text-xs text-slate-500">Simulador de pruebas diagnósticas y PAES</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Lista de Ensayos Disponibles -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <h3 class="font-bold text-slate-800 text-sm">Ensayos Disponibles</h3>
+            <div id="listaEnsayos" class="space-y-2">
+              <p class="text-xs text-slate-400">Cargando ensayos...</p>
+            </div>
+          </div>
+
+          <!-- ÁREA DE PRUEBA EN VIVO -->
+          <div class="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div id="areaRendirEnsayo" class="hidden space-y-6">
+              <div class="border-b pb-3 flex justify-between items-center">
+                <div>
+                  <h3 id="ensayoTitulo" class="font-bold text-lg text-slate-900"></h3>
+                  <p id="ensayoAsignatura" class="text-xs text-blue-600 font-semibold uppercase"></p>
+                </div>
+                <span class="text-xs font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded">⏱️ Tiempo Libre</span>
+              </div>
+
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-600">RUT Estudiante que rinde:</label>
+                <input type="text" id="rutRindiendo" placeholder="Ej: 21.456.789-0" class="w-full p-2 border rounded-lg text-sm">
+              </div>
+
+              <div id="contenedorPreguntas" class="space-y-6"></div>
+
+              <button onclick="enviarEnsayo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm shadow">
+                Entregar y Calificar Ensayo
+              </button>
+            </div>
+
+            <div id="placeholderEnsayo" class="text-center py-12 text-slate-400">
+              <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-2 stroke-1"></i>
+              <p class="text-sm">Selecciona un ensayo de la lista para comenzar la rendición online.</p>
+            </div>
+
+            <!-- RESULTADO ENSAYO -->
+            <div id="resultadoEnsayoRendido" class="hidden text-center py-8 space-y-3">
+              <div class="inline-flex p-4 bg-emerald-100 text-emerald-600 rounded-full mb-2">
+                <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-slate-900">¡Ensayo Completado!</h2>
+              <div class="text-3xl font-black text-blue-600" id="resNota">Nota: 7.0</div>
+              <p class="text-xs text-slate-500" id="resDetalle">Respuestas correctas: 2 / 2</p>
+              <button onclick="volverAEnsayos()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">Volver a Evaluaciones</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MÓDULO 4: GESTIÓN DE USUARIOS (ADMIN) -->
+      <section id="mod-usuarios" class="space-y-6 hidden">
+        <h1 class="text-2xl font-bold text-slate-900">Administración de Personal</h1>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-lg space-y-4">
+          <h3 class="font-bold text-slate-800 text-sm">Crear Nueva Cuenta</h3>
+          <form onsubmit="crearUsuario(event)" class="space-y-3">
+            <input type="text" id="nuevoUserNombre" placeholder="Nombre de usuario" class="w-full p-2.5 border rounded-lg text-sm" required>
+            <input type="password" id="nuevoUserPass" placeholder="Contraseña" class="w-full p-2.5 border rounded-lg text-sm" required>
+            <select id="nuevoUserRol" class="w-full p-2.5 border rounded-lg text-sm">
               <option value="profesor">Profesor / Docente</option>
               <option value="admin">Administrador / UTP</option>
             </select>
-          </div>
-          <button type="submit" style="width: 100%; background-color: #2b6cb0;">Crear Cuenta de Usuario</button>
-        </form>
-        <p id="msgUserForm" class="oculto"></p>
-      </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm">Crear Cuenta</button>
+          </form>
+          <p id="msgUserForm" class="text-xs font-semibold hidden"></p>
+        </div>
+      </section>
 
-    </div>
+    </main>
   </div>
 
   <script>
     let rutActualGuardado = "";
+    let ensayoActivoGlobal = null;
+    let miGrafico = null;
 
     window.onload = () => {
+      lucide.createIcons();
       const token = localStorage.getItem('token_liceo');
-      const usuario = localStorage.getItem('usuario_liceo');
-      const rol = localStorage.getItem('rol_liceo');
       if (token) {
-        mostrarPanelPrincipal(usuario, rol);
+        mostrarPanel(localStorage.getItem('usuario_liceo'), localStorage.getItem('rol_liceo'));
       }
     };
 
-    async function iniciarSesion(e) {
+    function iniciarSesion(e) {
       e.preventDefault();
-      const usuarioInput = document.getElementById('loginUsuario').value;
-      const passwordInput = document.getElementById('loginPassword').value;
-      const errorDiv = document.getElementById('errorLogin');
-
-      try {
-        const respuesta = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario: usuarioInput, password: passwordInput })
-        });
-
-        const resultado = await respuesta.json();
-
-        if (resultado.exito) {
-          localStorage.setItem('token_liceo', resultado.token);
-          localStorage.setItem('usuario_liceo', resultado.usuario);
-          localStorage.setItem('rol_liceo', resultado.rol);
-          mostrarPanelPrincipal(resultado.usuario, resultado.rol);
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usuario: document.getElementById('loginUsuario').value,
+          password: document.getElementById('loginPassword').value
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.exito) {
+          localStorage.setItem('token_liceo', res.token);
+          localStorage.setItem('usuario_liceo', res.usuario);
+          localStorage.setItem('rol_liceo', res.rol);
+          mostrarPanel(res.usuario, res.rol);
         } else {
-          errorDiv.textContent = resultado.mensaje;
-          errorDiv.classList.remove('oculto');
+          document.getElementById('errorLogin').textContent = res.mensaje;
+          document.getElementById('errorLogin').classList.remove('hidden');
         }
-      } catch (err) {
-        errorDiv.textContent = 'Error de conexión con el servidor.';
-        errorDiv.classList.remove('oculto');
-      }
+      });
     }
 
-    function mostrarPanelPrincipal(nombreUsuario, rol) {
-      document.getElementById('pantallaLogin').classList.add('oculto');
-      document.getElementById('panelPrincipal').classList.remove('oculto');
-      document.getElementById('nombreUsuarioActivo').textContent = nombreUsuario;
+    function mostrarPanel(usuario, rol) {
+      document.getElementById('pantallaLogin').classList.add('hidden');
+      document.getElementById('panelPrincipal').classList.remove('hidden');
+      document.getElementById('nombreUsuarioActivo').textContent = usuario;
       document.getElementById('badgeRolActivo').textContent = rol;
 
-      // Si es admin, mostramos la sección de crear usuarios y borrar alumnos
       if (rol === 'admin') {
-        document.getElementById('seccionUsuarios').classList.remove('oculto');
-        document.getElementById('btnEliminarAlumno').classList.remove('oculto');
-      } else {
-        document.getElementById('seccionUsuarios').classList.add('oculto');
-        document.getElementById('btnEliminarAlumno').classList.add('oculto');
+        document.getElementById('nav-usuarios').classList.remove('hidden');
       }
+
+      cambiarModulo('dashboard');
     }
 
     function cerrarSesion() {
@@ -292,200 +317,214 @@
       location.reload();
     }
 
-    // CREAR USUARIO (Solo Admin)
-    async function crearUsuario(e) {
-      e.preventDefault();
-      const token = localStorage.getItem('token_liceo');
-      const msg = document.getElementById('msgUserForm');
+    // NAVEGACIÓN MODULAR (SPA)
+    function cambiarModulo(mod) {
+      ['dashboard', 'alumnos', 'ensayos', 'usuarios'].forEach(m => {
+        document.getElementById(`mod-${m}`).classList.add('hidden');
+        document.getElementById(`nav-${m}`).classList.remove('bg-blue-600', 'text-white');
+      });
 
-      const datos = {
-        usuario: document.getElementById('nuevoUserNombre').value,
-        password: document.getElementById('nuevoUserPass').value,
-        rol: document.getElementById('nuevoUserRol').value
-      };
+      document.getElementById(`mod-${mod}`).classList.remove('hidden');
+      document.getElementById(`nav-${mod}`).classList.add('bg-blue-600', 'text-white');
 
-      try {
-        const resp = await fetch('/api/usuarios', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(datos)
+      if (mod === 'dashboard') cargarDashboard();
+      if (mod === 'ensayos') cargarListaEnsayos();
+    }
+
+    // DASHBOARD Y GRÁFICOS
+    function cargarDashboard() {
+      fetch('/api/estadisticas')
+        .then(r => r.json())
+        .then(res => {
+          if (res.exito) {
+            document.getElementById('kpiAlumnos').textContent = res.totalAlumnos;
+            document.getElementById('kpiPromedio').textContent = res.promedioGeneral;
+            document.getElementById('kpiEnsayos').textContent = res.totalEnsayosRendidos;
+
+            inicializarGrafico();
+          }
         });
-
-        const res = await resp.json();
-        msg.textContent = res.mensaje;
-        msg.className = res.exito ? 'mensaje-exito' : 'mensaje-error';
-        msg.classList.remove('oculto');
-
-        if (res.exito) {
-          document.getElementById('nuevoUserNombre').value = '';
-          document.getElementById('nuevoUserPass').value = '';
-        }
-      } catch (err) {
-        alert('Error al crear usuario.');
-      }
     }
 
-    async function buscarAlumno() {
-      const rut = document.getElementById('rutInput').value.trim();
-      const resultadoDiv = document.getElementById('resultado');
-      const errorMsg = document.getElementById('errorMsg');
-      document.getElementById('formEdicion').classList.add('oculto');
+    function inicializarGrafico() {
+      const ctx = document.getElementById('graficoRendimiento').getContext('2d');
+      if (miGrafico) miGrafico.destroy();
 
-      if (!rut) {
-        alert('Por favor ingresa un RUT válido');
-        return;
-      }
-
-      try {
-        const respuesta = await fetch(`/api/alumnos/rut/${rut}`);
-        const datos = await respuesta.json();
-
-        if (datos.exito) {
-          rutActualGuardado = datos.alumno.rut;
-          errorMsg.classList.add('oculto');
-          document.getElementById('nombreAlumno').textContent = datos.alumno.nombre;
-          document.getElementById('cursoAlumno').textContent = datos.alumno.curso;
-          document.getElementById('asistenciaAlumno').textContent = datos.alumno.asistencia;
-          document.getElementById('promedioAlumno').textContent = datos.alumno.promedioCalculado;
-          resultadoDiv.classList.remove('oculto');
-        } else {
-          resultadoDiv.classList.add('oculto');
-          errorMsg.textContent = datos.mensaje;
-          errorMsg.classList.remove('oculto');
-        }
-      } catch (err) {
-        alert('Error de conexión.');
-      }
-    }
-
-    async function registrarAlumno(evento) {
-      evento.preventDefault();
-      const mensajeForm = document.getElementById('mensajeForm');
-      const token = localStorage.getItem('token_liceo');
-      
-      const datosNuevoAlumno = {
-        rut: document.getElementById('nuevoRut').value,
-        nombre: document.getElementById('nuevoNombre').value,
-        curso: document.getElementById('nuevoCurso').value,
-        notas: document.getElementById('nuevasNotas').value,
-        asistencia: document.getElementById('nuevaAsistencia').value
-      };
-
-      try {
-        const respuesta = await fetch('/api/alumnos', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(datosNuevoAlumno)
-        });
-
-        const resultado = await respuesta.json();
-
-        if (resultado.exito) {
-          mensajeForm.className = 'mensaje-exito';
-          mensajeForm.textContent = resultado.mensaje;
-          mensajeForm.classList.remove('oculto');
-          document.getElementById('formRegistro').reset();
-        } else {
-          mensajeForm.className = 'mensaje-error';
-          mensajeForm.textContent = resultado.mensaje;
-          mensajeForm.classList.remove('oculto');
-        }
-      } catch (err) {
-        alert('Error al registrar estudiante.');
-      }
-    }
-
-    function modoEdicion() {
-      document.getElementById('editNombre').value = document.getElementById('nombreAlumno').textContent;
-      document.getElementById('editCurso').value = document.getElementById('cursoAlumno').textContent;
-      document.getElementById('editAsistencia').value = document.getElementById('asistenciaAlumno').textContent;
-      document.getElementById('formEdicion').classList.remove('oculto');
-    }
-
-    async function guardarEdicion() {
-      const token = localStorage.getItem('token_liceo');
-      const datosEditados = {
-        nombre: document.getElementById('editNombre').value,
-        curso: document.getElementById('editCurso').value,
-        asistencia: document.getElementById('editAsistencia').value
-      };
-
-      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      miGrafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Matemática', 'Lenguaje', 'Ciencias', 'Historia'],
+          datasets: [{
+            label: 'Promedio Obtenido (Escala 1.0 - 7.0)',
+            data: [5.8, 6.1, 5.4, 6.3],
+            backgroundColor: ['#2563eb', '#059669', '#7c3aed', '#d97706'],
+            borderRadius: 8
+          }]
         },
-        body: JSON.stringify(datosEditados)
-      });
-
-      const resultado = await respuesta.json();
-
-      if (resultado.exito) {
-        alert(resultado.mensaje);
-        document.getElementById('formEdicion').classList.add('oculto');
-        buscarAlumno();
-      }
-    }
-
-    async function eliminarAlumno() {
-      const token = localStorage.getItem('token_liceo');
-      const confirmacion = confirm(`¿Estás seguro de eliminar al alumno con RUT ${rutActualGuardado}?`);
-      if (!confirmacion) return;
-
-      const respuesta = await fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      const resultado = await respuesta.json();
-
-      if (resultado.exito) {
-        alert(resultado.mensaje);
-        document.getElementById('resultado').classList.add('oculto');
-        document.getElementById('rutInput').value = '';
-      } else {
-        alert(resultado.mensaje);
-      }
-    }
-
-    async function descargarCSV() {
-      try {
-        const respuesta = await fetch('/api/alumnos');
-        const listaAlumnos = await respuesta.json();
-
-        if (!Array.isArray(listaAlumnos) || listaAlumnos.length === 0) {
-          alert('⚠️ No hay estudiantes registrados.');
-          return;
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { min: 1, max: 7 } }
         }
+      });
+    }
 
-        let contenidoCSV = "ID;RUT;Nombre Completo;Curso;Notas;Asistencia\n";
-
-        listaAlumnos.forEach(alumno => {
-          contenidoCSV += `${alumno.id || ''};"${alumno.rut || ''}";"${alumno.nombre || ''}";"${alumno.curso || ''}";"${alumno.notas || ''}";"${alumno.asistencia || ''}"\n`;
+    // ALUMNOS
+    function buscarAlumno() {
+      const rut = document.getElementById('rutInput').value.trim();
+      fetch(`/api/alumnos/rut/${rut}`)
+        .then(r => r.json())
+        .then(res => {
+          const card = document.getElementById('resultadoAlumno');
+          if (res.exito) {
+            rutActualGuardado = res.alumno.rut;
+            document.getElementById('nombreAlumno').textContent = res.alumno.nombre;
+            document.getElementById('cursoAlumno').textContent = res.alumno.curso;
+            document.getElementById('asistenciaAlumno').textContent = res.alumno.asistencia;
+            document.getElementById('promedioAlumno').textContent = res.alumno.promedioCalculado;
+            card.classList.remove('hidden');
+          } else {
+            alert(res.mensaje);
+            card.classList.add('hidden');
+          }
         });
+    }
 
-        const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const enlace = document.createElement('a');
-        enlace.href = url;
-        enlace.download = `Nomina_Alumnos_Liceo_Asilva_${new Date().toISOString().slice(0,10)}.csv`;
-        
-        document.body.appendChild(enlace);
-        enlace.click();
-        document.body.removeChild(enlace);
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        alert('❌ Error al exportar CSV.');
-      }
+    function registrarAlumno(e) {
+      e.preventDefault();
+      fetch('/api/alumnos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token_liceo')}`
+        },
+        body: JSON.stringify({
+          rut: document.getElementById('nuevoRut').value,
+          nombre: document.getElementById('nuevoNombre').value,
+          curso: document.getElementById('nuevoCurso').value,
+          notas: document.getElementById('nuevasNotas').value,
+          asistencia: document.getElementById('nuevaAsistencia').value
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        alert(res.mensaje);
+        if (res.exito) e.target.reset();
+      });
+    }
+
+    function eliminarAlumno() {
+      if (!confirm(`¿Borrar a ${rutActualGuardado}?`)) return;
+      fetch(`/api/alumnos/rut/${rutActualGuardado}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token_liceo')}` }
+      })
+      .then(r => r.json())
+      .then(res => {
+        alert(res.mensaje);
+        document.getElementById('resultadoAlumno').classList.add('hidden');
+      });
+    }
+
+    // ENSAYOS
+    function cargarListaEnsayos() {
+      fetch('/api/ensayos')
+        .then(r => r.json())
+        .then(res => {
+          const div = document.getElementById('listaEnsayos');
+          div.innerHTML = '';
+          res.ensayos.forEach(e => {
+            div.innerHTML += `
+              <div onclick="cargarEnsayo(${e.id})" class="p-3 bg-slate-50 hover:bg-blue-50 border rounded-lg cursor-pointer transition">
+                <p class="font-bold text-xs text-slate-800">${e.titulo}</p>
+                <span class="text-[10px] text-blue-600 font-semibold">${e.asignatura}</span>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function cargarEnsayo(id) {
+      fetch(`/api/ensayos/${id}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.exito) {
+            ensayoActivoGlobal = res.ensayo;
+            document.getElementById('placeholderEnsayo').classList.add('hidden');
+            document.getElementById('resultadoEnsayoRendido').classList.add('hidden');
+            document.getElementById('areaRendirEnsayo').classList.remove('hidden');
+
+            document.getElementById('ensayoTitulo').textContent = res.ensayo.titulo;
+            document.getElementById('ensayoAsignatura').textContent = res.ensayo.asignatura;
+
+            const cont = document.getElementById('contenedorPreguntas');
+            cont.innerHTML = '';
+            res.ensayo.preguntas.forEach((p, pIdx) => {
+              let opcionesHtml = '';
+              p.opciones.forEach((op, oIdx) => {
+                opcionesHtml += `
+                  <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-slate-50 text-xs cursor-pointer">
+                    <input type="radio" name="p_${pIdx}" value="${oIdx}">
+                    <span>${op}</span>
+                  </label>
+                `;
+              });
+
+              cont.innerHTML += `
+                <div class="space-y-2 border-b pb-4">
+                  <p class="font-semibold text-sm text-slate-800">${pIdx + 1}. ${p.enunciado}</p>
+                  <div class="space-y-1">${opcionesHtml}</div>
+                </div>
+              `;
+            });
+          }
+        });
+    }
+
+    function enviarEnsayo() {
+      const alumnoRut = document.getElementById('rutRindiendo').value.trim();
+      if (!alumnoRut) return alert('Ingresa tu RUT para calificar el ensayo.');
+
+      const respuestas = [];
+      ensayoActivoGlobal.preguntas.forEach((_, idx) => {
+        const marcada = document.querySelector(`input[name="p_${idx}"]:checked`);
+        respuestas.push(marcada ? parseInt(marcada.value) : -1);
+      });
+
+      fetch('/api/ensayos/responder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ensayoId: ensayoActivoGlobal.id, alumnoRut, respuestas })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.exito) {
+          document.getElementById('areaRendirEnsayo').classList.add('hidden');
+          document.getElementById('resultadoEnsayoRendido').classList.remove('hidden');
+          document.getElementById('resNota').textContent = `Nota: ${res.resultado.nota}`;
+          document.getElementById('resDetalle').textContent = `Respuestas correctas: ${res.resultado.correctas} de ${res.resultado.total}`;
+        }
+      });
+    }
+
+    function volverAEnsayos() {
+      document.getElementById('resultadoEnsayoRendido').classList.add('hidden');
+      document.getElementById('placeholderEnsayo').classList.remove('hidden');
+    }
+
+    function descargarCSV() {
+      fetch('/api/alumnos')
+        .then(r => r.json())
+        .then(lista => {
+          let csv = "ID;RUT;Nombre;Curso;Notas;Asistencia\n";
+          lista.forEach(a => { csv += `${a.id};"${a.rut}";"${a.nombre}";"${a.curso}";"${a.notas}";"${a.asistencia}"\n`; });
+          const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `Nomina_Alumnos.csv`;
+          a.click();
+        });
     }
   </script>
-
 </body>
 </html>

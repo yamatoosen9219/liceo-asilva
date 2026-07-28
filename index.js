@@ -76,6 +76,24 @@ async function initDB() {
           asistencia TEXT
         );
       `);
+      await queryDb(`
+        CREATE TABLE IF NOT EXISTS ensayos (
+          id SERIAL PRIMARY KEY,
+          titulo TEXT NOT NULL,
+          asignatura TEXT NOT NULL,
+          preguntas_json TEXT NOT NULL
+        );
+      `);
+      await queryDb(`
+        CREATE TABLE IF NOT EXISTS resultados_ensayos (
+          id SERIAL PRIMARY KEY,
+          ensayo_id INTEGER,
+          alumno_rut TEXT,
+          puntaje REAL,
+          total_preguntas INTEGER,
+          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
     } else {
       await queryDb(`
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -95,14 +113,54 @@ async function initDB() {
           asistencia TEXT
         );
       `);
+      await queryDb(`
+        CREATE TABLE IF NOT EXISTS ensayos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          titulo TEXT NOT NULL,
+          asignatura TEXT NOT NULL,
+          preguntas_json TEXT NOT NULL
+        );
+      `);
+      await queryDb(`
+        CREATE TABLE IF NOT EXISTS resultados_ensayos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ensayo_id INTEGER,
+          alumno_rut TEXT,
+          puntaje REAL,
+          total_preguntas INTEGER,
+          fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
     }
 
+    // Usuario predeterminado
     const usuarios = await queryDb('SELECT * FROM usuarios WHERE usuario = ?', ['admin']);
     if (usuarios.length === 0) {
       const hash = await bcrypt.hash('admin123', 10);
       await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', ['admin', hash, 'admin']);
-      console.log('👤 Usuario admin predeterminado listo (Contraseña: admin123)');
     }
+
+    // Insertar un ensayo demo si no existe ninguno
+    const ensayosExistentes = await queryDb('SELECT * FROM ensayos');
+    if (ensayosExistentes.length === 0) {
+      const demoPreguntas = JSON.stringify([
+        {
+          id: 1,
+          enunciado: "¿Cuál es el resultado de 3x + 5 = 14?",
+          opciones: ["x = 2", "x = 3", "x = 4", "x = 5"],
+          correcta: 1 // Índice de "x = 3"
+        },
+        {
+          id: 2,
+          enunciado: "¿Cuál es el órgano principal del sistema circulatorio?",
+          opciones: ["Pulmón", "Cerebro", "Corazón", "Hígado"],
+          correcta: 2 // Índice de "Corazón"
+        }
+      ]);
+      await queryDb('INSERT INTO ensayos (titulo, asignatura, preguntas_json) VALUES (?, ?, ?)', 
+        ['Ensayo Diagnóstico Inicial', 'Matemática y Ciencias', demoPreguntas]);
+    }
+
     console.log('✅ Base de datos inicializada correctamente.');
   } catch (err) {
     console.error('❌ Error al inicializar BD:', err);
@@ -111,182 +169,206 @@ async function initDB() {
 
 initDB();
 
-// Middleware de Autenticación
+// Middlewares
 function verificarToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ exito: false, mensaje: 'Acceso denegado. Requiere iniciar sesión.' });
-  }
+  if (!token) return res.status(401).json({ exito: false, mensaje: 'Requiere sesión activa.' });
 
   jwt.verify(token, JWT_SECRET, (err, usuario) => {
-    if (err) {
-      return res.status(403).json({ exito: false, mensaje: 'Token inválido o expirado.' });
-    }
+    if (err) return res.status(403).json({ exito: false, mensaje: 'Token inválido.' });
     req.usuario = usuario;
     next();
   });
 }
 
-// Middleware Solo Admin
 function soloAdmin(req, res, next) {
-  if (req.usuario && req.usuario.rol === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ exito: false, mensaje: 'Acceso restringido. Requiere rol de Administrador.' });
-  }
+  if (req.usuario && req.usuario.rol === 'admin') next();
+  else res.status(403).json({ exito: false, mensaje: 'Acceso solo para administradores.' });
 }
 
-// ----------------------------------------------------
-// RUTAS DE LA API
-// ----------------------------------------------------
+// ---------------- API ENDPOINTS ----------------
 
 // Login
 app.post('/api/login', async (req, res) => {
   const { usuario, password } = req.body;
-  if (!usuario || !password) {
-    return res.status(400).json({ exito: false, mensaje: 'Ingrese usuario y contraseña.' });
-  }
-
   try {
     const filas = await queryDb('SELECT * FROM usuarios WHERE usuario = ?', [usuario]);
-    if (filas.length === 0) {
-      return res.status(401).json({ exito: false, mensaje: 'Usuario o contraseña incorrectos.' });
-    }
+    if (filas.length === 0) return res.status(401).json({ exito: false, mensaje: 'Usuario no existe.' });
 
     const user = filas[0];
-    const passwordValida = await bcrypt.compare(password, user.password);
-    if (!passwordValida) {
-      return res.status(401).json({ exito: false, mensaje: 'Usuario o contraseña incorrectos.' });
-    }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ exito: false, mensaje: 'Contraseña incorrecta.' });
 
-    const token = jwt.sign(
-      { id: user.id, usuario: user.usuario, rol: user.rol || 'admin' },
-      JWT_SECRET,
-      { expiresIn: '8h' }
-    );
-
-    res.json({
-      exito: true,
-      mensaje: 'Autenticación exitosa',
-      token,
-      usuario: user.usuario,
-      rol: user.rol || 'admin'
-    });
+    const token = jwt.sign({ id: user.id, usuario: user.usuario, rol: user.rol }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ exito: true, token, usuario: user.usuario, rol: user.rol });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error interno en el servidor.' });
+    res.status(500).json({ exito: false, mensaje: 'Error de servidor.' });
   }
 });
 
-// Crear nuevo usuario (Solo Admin)
+// Usuarios
 app.post('/api/usuarios', verificarToken, soloAdmin, async (req, res) => {
   const { usuario, password, rol } = req.body;
-  if (!usuario || !password) {
-    return res.status(400).json({ exito: false, mensaje: 'Usuario y contraseña son requeridos.' });
-  }
-
   try {
     const hash = await bcrypt.hash(password, 10);
-    const rolUsuario = rol || 'profesor';
-    await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', [usuario.trim(), hash, rolUsuario]);
-    res.json({ exito: true, mensaje: `Usuario '${usuario}' creado exitosamente con rol '${rolUsuario}'.` });
+    await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', [usuario.trim(), hash, rol || 'profesor']);
+    res.json({ exito: true, mensaje: `Usuario '${usuario}' creado.` });
   } catch (err) {
-    res.status(400).json({ exito: false, mensaje: 'Error: El nombre de usuario ya existe.' });
+    res.status(400).json({ exito: false, mensaje: 'El usuario ya existe.' });
   }
 });
 
-// Obtener lista de usuarios (Solo Admin)
-app.get('/api/usuarios', verificarToken, soloAdmin, async (req, res) => {
-  try {
-    const usuarios = await queryDb('SELECT id, usuario, rol FROM usuarios ORDER BY id ASC');
-    res.json({ exito: true, usuarios });
-  } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al consultar usuarios.' });
-  }
-});
-
-// Obtener todos los alumnos
+// Alumnos
 app.get('/api/alumnos', async (req, res) => {
   try {
     const alumnos = await queryDb('SELECT * FROM alumnos ORDER BY nombre ASC');
     res.json(alumnos);
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al consultar alumnos.' });
+    res.status(500).json({ exito: false, mensaje: 'Error al obtener alumnos.' });
   }
 });
 
-// Buscar alumno por RUT
 app.get('/api/alumnos/rut/:rut', async (req, res) => {
-  const rutBuscado = req.params.rut.trim();
   try {
-    const alumnos = await queryDb('SELECT * FROM alumnos WHERE rut = ?', [rutBuscado]);
-    if (alumnos.length === 0) {
-      return res.status(404).json({ exito: false, mensaje: 'Estudiante no encontrado.' });
-    }
-
+    const alumnos = await queryDb('SELECT * FROM alumnos WHERE rut = ?', [req.params.rut.trim()]);
+    if (alumnos.length === 0) return res.status(404).json({ exito: false, mensaje: 'Estudiante no encontrado.' });
+    
     const alumno = alumnos[0];
     let promedioCalculado = "Sin notas";
-
     if (alumno.notas) {
-      const listaNotas = alumno.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
-      if (listaNotas.length > 0) {
-        const suma = listaNotas.reduce((acc, val) => acc + val, 0);
-        promedioCalculado = (suma / listaNotas.length).toFixed(1);
-      }
+      const lista = alumno.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+      if (lista.length > 0) promedioCalculado = (lista.reduce((a, b) => a + b, 0) / lista.length).toFixed(1);
     }
-
     res.json({ exito: true, alumno: { ...alumno, promedioCalculado } });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al buscar estudiante.' });
+    res.status(500).json({ exito: false, mensaje: 'Error en consulta.' });
   }
 });
 
-// Registrar nuevo alumno (Profesor o Admin)
 app.post('/api/alumnos', verificarToken, async (req, res) => {
   const { rut, nombre, curso, notas, asistencia } = req.body;
-  if (!rut || !nombre || !curso) {
-    return res.status(400).json({ exito: false, mensaje: 'RUT, Nombre y Curso son obligatorios.' });
-  }
-
   try {
-    await queryDb(
-      'INSERT INTO alumnos (rut, nombre, curso, notas, asistencia) VALUES (?, ?, ?, ?, ?)',
-      [rut.trim(), nombre.trim(), curso.trim(), notas || '', asistencia || '']
-    );
-    res.json({ exito: true, mensaje: 'Estudiante registrado con éxito.' });
+    await queryDb('INSERT INTO alumnos (rut, nombre, curso, notas, asistencia) VALUES (?, ?, ?, ?, ?)',
+      [rut.trim(), nombre.trim(), curso.trim(), notas || '', asistencia || '']);
+    res.json({ exito: true, mensaje: 'Estudiante registrado.' });
   } catch (err) {
-    res.status(400).json({ exito: false, mensaje: 'Error al registrar: El RUT ya existe.' });
+    res.status(400).json({ exito: false, mensaje: 'El RUT ya existe.' });
   }
 });
 
-// Editar alumno por RUT (Profesor o Admin)
 app.put('/api/alumnos/rut/:rut', verificarToken, async (req, res) => {
-  const rutBuscado = req.params.rut.trim();
   const { nombre, curso, asistencia } = req.body;
-
   try {
-    await queryDb(
-      'UPDATE alumnos SET nombre = ?, curso = ?, asistencia = ? WHERE rut = ?',
-      [nombre.trim(), curso.trim(), asistencia.trim(), rutBuscado]
-    );
-    res.json({ exito: true, mensaje: 'Datos del estudiante actualizados correctamente.' });
+    await queryDb('UPDATE alumnos SET nombre = ?, curso = ?, asistencia = ? WHERE rut = ?',
+      [nombre.trim(), curso.trim(), asistencia.trim(), req.params.rut.trim()]);
+    res.json({ exito: true, mensaje: 'Alumno actualizado.' });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al actualizar estudiante.' });
+    res.status(500).json({ exito: false, mensaje: 'Error al actualizar.' });
   }
 });
 
-// Eliminar alumno por RUT (Solo Admin)
 app.delete('/api/alumnos/rut/:rut', verificarToken, soloAdmin, async (req, res) => {
-  const rutBuscado = req.params.rut.trim();
   try {
-    await queryDb('DELETE FROM alumnos WHERE rut = ?', [rutBuscado]);
-    res.json({ exito: true, mensaje: 'Estudiante eliminado del sistema.' });
+    await queryDb('DELETE FROM alumnos WHERE rut = ?', [req.params.rut.trim()]);
+    res.json({ exito: true, mensaje: 'Estudiante eliminado.' });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al eliminar estudiante.' });
+    res.status(500).json({ exito: false, mensaje: 'Error al borrar.' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor listo en puerto ${PORT}`);
+// ----------------- ENSAYOS / EXÁMENES -----------------
+
+// Obtener lista de ensayos disponibles
+app.get('/api/ensayos', async (req, res) => {
+  try {
+    const ensayos = await queryDb('SELECT id, titulo, asignatura FROM ensayos');
+    res.json({ exito: true, ensayos });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al cargar ensayos.' });
+  }
 });
+
+// Obtener un ensayo completo con preguntas para rendir
+app.get('/api/ensayos/:id', async (req, res) => {
+  try {
+    const filas = await queryDb('SELECT * FROM ensayos WHERE id = ?', [req.params.id]);
+    if (filas.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no encontrado.' });
+    
+    const ensayo = filas[0];
+    ensayo.preguntas = JSON.parse(ensayo.preguntas_json);
+    delete ensayo.preguntas_json;
+    res.json({ exito: true, ensayo });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al obtener ensayo.' });
+  }
+});
+
+// Guardar resultado de ensayo rendido por un estudiante
+app.post('/api/ensayos/responder', async (req, res) => {
+  const { ensayoId, alumnoRut, respuestas } = req.body; // respuestas = [0, 2, 1...] (índices marcados)
+  try {
+    const filas = await queryDb('SELECT preguntas_json FROM ensayos WHERE id = ?', [ensayoId]);
+    if (filas.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no válido.' });
+
+    const preguntas = JSON.parse(filas[0].preguntas_json);
+    let correctas = 0;
+
+    preguntas.forEach((p, idx) => {
+      if (respuestas[idx] !== undefined && respuestas[idx] === p.correcta) {
+        correctas++;
+      }
+    });
+
+    const notaEscala = ((correctas / preguntas.length) * 6 + 1).toFixed(1); // Nota de 1.0 a 7.0
+
+    await queryDb(
+      'INSERT INTO resultados_ensayos (ensayo_id, alumno_rut, puntaje, total_preguntas) VALUES (?, ?, ?, ?)',
+      [ensayoId, alumnoRut.trim(), correctas, preguntas.length]
+    );
+
+    res.json({
+      exito: true,
+      mensaje: 'Ensayo completado exitosamente.',
+      resultado: {
+        correctas,
+        total: preguntas.length,
+        nota: notaEscala
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al guardar respuesta.' });
+  }
+});
+
+// Obtener estadísticas acumuladas para los gráficos
+app.get('/api/estadisticas', async (req, res) => {
+  try {
+    const alumnos = await queryDb('SELECT * FROM alumnos');
+    const resultados = await queryDb('SELECT * FROM resultados_ensayos');
+
+    // Promedio de notas general
+    let sumaNotas = 0;
+    let totalNotas = 0;
+    alumnos.forEach(a => {
+      if (a.notas) {
+        const arr = a.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+        arr.forEach(n => { sumaNotas += n; totalNotas++; });
+      }
+    });
+
+    const promedioGeneral = totalNotas > 0 ? (sumaNotas / totalNotas).toFixed(1) : "0.0";
+
+    res.json({
+      exito: true,
+      totalAlumnos: alumnos.length,
+      promedioGeneral,
+      totalEnsayosRendidos: resultados.length,
+      ultimosResultados: resultados.slice(-10)
+    });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al obtener métricas.' });
+  }
+});
+
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
