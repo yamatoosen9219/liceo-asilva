@@ -153,7 +153,9 @@
             <div><strong>Estado:</strong> <span class="text-emerald-600 font-bold">Regular</span></div>
           </div>
 
-          <div class="flex gap-2">
+          <div id="contenedorHistorialAlumno"></div>
+
+          <div class="flex gap-2 border-t pt-3">
             <button id="btnEliminarAlumno" onclick="eliminarAlumno()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold">Eliminar</button>
           </div>
         </div>
@@ -178,13 +180,12 @@
             <h1 class="text-2xl font-bold text-slate-900">Evaluaciones & Ensayos Online</h1>
             <p class="text-xs text-slate-500">Simulador y creador de evaluaciones pedagógicas</p>
           </div>
-          <!-- Botón para alternar modo Creador / Rendedor -->
           <button onclick="toggleCreadorEnsayo()" id="btnToggleCreador" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Crear Nuevo Ensayo
           </button>
         </div>
 
-        <!-- FORMULARIO CREADOR DE ENSAYOS (Oculto por defecto) -->
+        <!-- FORMULARIO CREADOR DE ENSAYOS -->
         <div id="panelCreadorEnsayo" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hidden space-y-6">
           <div class="border-b pb-3 flex justify-between items-center">
             <h3 class="font-bold text-base text-slate-900">Diseñador de Ensayos / Pruebas</h3>
@@ -202,7 +203,6 @@
             </div>
           </div>
 
-          <!-- BANCO DE PREGUNTAS EN CONSTRUCCIÓN -->
           <div class="space-y-4">
             <div class="flex justify-between items-center">
               <h4 class="font-bold text-sm text-slate-800">Preguntas de la Evaluación</h4>
@@ -211,9 +211,7 @@
               </button>
             </div>
 
-            <div id="listaPreguntasCreador" class="space-y-4">
-              <!-- Las preguntas agregadas dinámicamente aparecerán aquí -->
-            </div>
+            <div id="listaPreguntasCreador" class="space-y-4"></div>
           </div>
 
           <button onclick="guardarNuevoEnsayo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm shadow">
@@ -397,9 +395,11 @@
       });
     }
 
-    // ALUMNOS
+    // ALUMNOS & BUSQUEDA
     function buscarAlumno() {
       const rut = document.getElementById('rutInput').value.trim();
+      if (!rut) return alert('Ingresa un RUT válido.');
+
       fetch(`/api/alumnos/rut/${rut}`)
         .then(r => r.json())
         .then(res => {
@@ -410,6 +410,39 @@
             document.getElementById('cursoAlumno').textContent = res.alumno.curso;
             document.getElementById('asistenciaAlumno').textContent = res.alumno.asistencia;
             document.getElementById('promedioAlumno').textContent = res.alumno.promedioCalculado;
+
+            // Renderizar Historial de Ensayos Rendidos
+            let tablaHistorialHtml = '';
+            if (res.alumno.historialEnsayos && res.alumno.historialEnsayos.length > 0) {
+              tablaHistorialHtml = `
+                <div class="mt-4 border-t pt-4">
+                  <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Historial de Ensayos Rendidos</h4>
+                  <div class="space-y-2">
+              `;
+              res.alumno.historialEnsayos.forEach(h => {
+                tablaHistorialHtml += `
+                  <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg text-xs border border-slate-200">
+                    <div>
+                      <p class="font-bold text-slate-800">${h.titulo}</p>
+                      <p class="text-[10px] text-slate-500">${h.asignatura} • ${new Date(h.fecha).toLocaleDateString()}</p>
+                    </div>
+                    <div class="text-right">
+                      <span class="font-bold text-blue-600">Nota ${h.nota}</span>
+                      <p class="text-[10px] text-slate-400">${h.puntaje}/${h.total_preguntas} correctas</p>
+                    </div>
+                  </div>
+                `;
+              });
+              tablaHistorialHtml += `</div></div>`;
+            } else {
+              tablaHistorialHtml = `
+                <div class="mt-4 border-t pt-3 text-xs text-slate-400 text-center">
+                  Sin ensayos rendidos registrados en la plataforma.
+                </div>
+              `;
+            }
+
+            document.getElementById('contenedorHistorialAlumno').innerHTML = tablaHistorialHtml;
             card.classList.remove('hidden');
           } else {
             alert(res.mensaje);
@@ -465,7 +498,7 @@
         vista.classList.add('hidden');
         btn.classList.add('hidden');
         if (contadorPreguntasCreador === 0) {
-          agregarCampoPregunta(); // Agregar 1era pregunta por defecto
+          agregarCampoPregunta();
         }
       } else {
         creador.classList.add('hidden');
@@ -488,7 +521,7 @@
           <input type="text" class="p_enunciado w-full p-2 border rounded text-xs" placeholder="Enunciado de la pregunta (ej: ¿Cuánto es 12 + 15?)" required>
           
           <div class="space-y-1.5 pl-2">
-            <p class="text-[11px] text-slate-500 font-semibold">Opciones de respuesta (Marca el círculo de la opción correcta):</p>
+            <p class="text-[11px] text-slate-500 font-semibold">Opciones de respuesta (Marca la opción correcta):</p>
             <div class="flex items-center gap-2">
               <input type="radio" name="p_correcta_${id}" value="0" checked>
               <input type="text" class="p_op_0 flex-1 p-1.5 border rounded text-xs" placeholder="Opción A" required>
@@ -642,7 +675,7 @@
           document.getElementById('areaRendirEnsayo').classList.add('hidden');
           document.getElementById('resultadoEnsayoRendido').classList.remove('hidden');
           document.getElementById('resNota').textContent = `Nota: ${res.resultado.nota}`;
-          document.getElementById('resDetalle').textContent = `Respuestas correctas: ${res.resultado.correctas} de ${res.resultado.total}`;
+          document.getElementById('resDetalle').textContent = `Respuestas correctas: ${res.resultado.puntaje} de ${res.resultado.total}`;
         }
       });
     }

@@ -1,228 +1,163 @@
-const express = require('express');
-const { Pool } = require('pg');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import express from 'express';
+import sqlite3 from 'sqlite3';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'secreto_super_seguro_liceo_asilva_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'clave_secreta_super_segura_liceo_asilva_2025';
 
-app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'src', 'publico')));
+app.use(express.static(path.join(__dirname, 'src/publico')));
 
-// Base de Datos (PostgreSQL / SQLite)
-const isPostgres = !!process.env.DATABASE_URL;
-let dbPg = null;
-let dbSqlite = null;
-
-if (isPostgres) {
-  console.log('🔗 Conectando a PostgreSQL en la nube...');
-  dbPg = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
-} else {
-  console.log('📁 Conectando a SQLite local...');
-  const dbPath = path.join(__dirname, 'colegio.db');
-  dbSqlite = new sqlite3.Database(dbPath);
-}
-
-async function queryDb(sql, params = []) {
-  if (isPostgres) {
-    let paramIndex = 1;
-    const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
-    const res = await dbPg.query(pgSql, params);
-    return res.rows;
+// ----------------- BASE DE DATOS SQLITE -----------------
+const db = new sqlite3.Database('./base_datos.db', (err) => {
+  if (err) {
+    console.error('Error al conectar a la Base de Datos SQLite:', err.message);
   } else {
-    return new Promise((resolve, reject) => {
-      const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
-      if (isSelect) {
-        dbSqlite.all(sql, params, (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        });
-      } else {
-        dbSqlite.run(sql, params, function (err) {
-          if (err) reject(err);
-          else resolve({ lastID: this.lastID, changes: this.changes });
-        });
-      }
-    });
+    console.log('Conectado exitosamente a la Base de Datos SQLite.');
   }
-}
+});
 
-async function initDB() {
-  try {
-    if (isPostgres) {
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS usuarios (
-          id SERIAL PRIMARY KEY,
-          usuario TEXT UNIQUE NOT NULL,
-          password TEXT NOT NULL,
-          rol TEXT DEFAULT 'admin'
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS alumnos (
-          id SERIAL PRIMARY KEY,
-          rut TEXT UNIQUE NOT NULL,
-          nombre TEXT NOT NULL,
-          curso TEXT NOT NULL,
-          notas TEXT,
-          asistencia TEXT
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS ensayos (
-          id SERIAL PRIMARY KEY,
-          titulo TEXT NOT NULL,
-          asignatura TEXT NOT NULL,
-          preguntas_json TEXT NOT NULL
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS resultados_ensayos (
-          id SERIAL PRIMARY KEY,
-          ensayo_id INTEGER,
-          alumno_rut TEXT,
-          puntaje REAL,
-          total_preguntas INTEGER,
-          fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
-    } else {
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS usuarios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          usuario TEXT UNIQUE NOT NULL,
-          password TEXT NOT NULL,
-          rol TEXT DEFAULT 'admin'
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS alumnos (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          rut TEXT UNIQUE NOT NULL,
-          nombre TEXT NOT NULL,
-          curso TEXT NOT NULL,
-          notas TEXT,
-          asistencia TEXT
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS ensayos (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          titulo TEXT NOT NULL,
-          asignatura TEXT NOT NULL,
-          preguntas_json TEXT NOT NULL
-        );
-      `);
-      await queryDb(`
-        CREATE TABLE IF NOT EXISTS resultados_ensayos (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          ensayo_id INTEGER,
-          alumno_rut TEXT,
-          puntaje REAL,
-          total_preguntas INTEGER,
-          fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
+// Helper con Promesas para consultas
+const queryDb = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+};
+
+// Inicialización de Tablas
+db.serialize(async () => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario TEXT UNIQUE,
+      password TEXT,
+      rol TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS alumnos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rut TEXT UNIQUE,
+      nombre TEXT,
+      curso TEXT,
+      notas TEXT,
+      asistencia TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS ensayos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      titulo TEXT,
+      asignatura TEXT,
+      preguntas_json TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS resultados_ensayos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ensayo_id INTEGER,
+      alumno_rut TEXT,
+      puntaje INTEGER,
+      total_preguntas INTEGER,
+      fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Crear usuario admin por defecto si no existe
+  db.get('SELECT * FROM usuarios WHERE usuario = ?', ['admin'], async (err, row) => {
+    if (!row) {
+      const passHash = await bcrypt.hash('admin123', 10);
+      db.run('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', ['admin', passHash, 'admin']);
+      console.log('Usuario admin inicial creado (admin / admin123)');
     }
+  });
 
-    // Usuario predeterminado
-    const usuarios = await queryDb('SELECT * FROM usuarios WHERE usuario = ?', ['admin']);
-    if (usuarios.length === 0) {
-      const hash = await bcrypt.hash('admin123', 10);
-      await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', ['admin', hash, 'admin']);
-    }
-
-    // Insertar un ensayo demo si no existe ninguno
-    const ensayosExistentes = await queryDb('SELECT * FROM ensayos');
-    if (ensayosExistentes.length === 0) {
+  // Crear ensayo de demostración si no hay
+  db.get('SELECT COUNT(*) as count FROM ensayos', [], (err, row) => {
+    if (row && row.count === 0) {
       const demoPreguntas = JSON.stringify([
         {
           id: 1,
-          enunciado: "¿Cuál es el resultado de 3x + 5 = 14?",
+          enunciado: "¿Cuál es el valor de x en la ecuación: 2x + 4 = 10?",
           opciones: ["x = 2", "x = 3", "x = 4", "x = 5"],
-          correcta: 1 // Índice de "x = 3"
+          correcta: 1
         },
         {
           id: 2,
-          enunciado: "¿Cuál es el órgano principal del sistema circulatorio?",
-          opciones: ["Pulmón", "Cerebro", "Corazón", "Hígado"],
-          correcta: 2 // Índice de "Corazón"
+          enunciado: "¿Cuál es la capital de Chile?",
+          opciones: ["Valparaíso", "Concepción", "Santiago", "La Serena"],
+          correcta: 2
         }
       ]);
-      await queryDb('INSERT INTO ensayos (titulo, asignatura, preguntas_json) VALUES (?, ?, ?)', 
-        ['Ensayo Diagnóstico Inicial', 'Matemática y Ciencias', demoPreguntas]);
+      db.run(
+        'INSERT INTO ensayos (titulo, asignatura, preguntas_json) VALUES (?, ?, ?)',
+        ['Ensayo Diagnóstico Inicial PAES', 'General / Diagnóstico', demoPreguntas]
+      );
     }
+  });
+});
 
-    console.log('✅ Base de datos inicializada correctamente.');
-  } catch (err) {
-    console.error('❌ Error al inicializar BD:', err);
-  }
-}
+// ----------------- MIDDLEWARE AUTENTICACIÓN -----------------
+const verificarToken = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(401).json({ exito: false, mensaje: 'Acceso no autorizado. Token requerido.' });
 
-initDB();
-
-// Middlewares
-function verificarToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ exito: false, mensaje: 'Requiere sesión activa.' });
-
-  jwt.verify(token, JWT_SECRET, (err, usuario) => {
-    if (err) return res.status(403).json({ exito: false, mensaje: 'Token inválido.' });
-    req.usuario = usuario;
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ exito: false, mensaje: 'Token inválido o expirado.' });
+    req.usuario = decoded;
     next();
   });
-}
+};
 
-function soloAdmin(req, res, next) {
-  if (req.usuario && req.usuario.rol === 'admin') next();
-  else res.status(403).json({ exito: false, mensaje: 'Acceso solo para administradores.' });
-}
-
-// ---------------- API ENDPOINTS ----------------
-
-// Login
+// ----------------- ENDPOINTS AUTENTICACIÓN & USUARIOS -----------------
 app.post('/api/login', async (req, res) => {
   const { usuario, password } = req.body;
   try {
-    const filas = await queryDb('SELECT * FROM usuarios WHERE usuario = ?', [usuario]);
-    if (filas.length === 0) return res.status(401).json({ exito: false, mensaje: 'Usuario no existe.' });
+    const usuarios = await queryDb('SELECT * FROM usuarios WHERE usuario = ?', [usuario]);
+    if (usuarios.length === 0) return res.status(400).json({ exito: false, mensaje: 'Usuario no encontrado.' });
 
-    const user = filas[0];
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ exito: false, mensaje: 'Contraseña incorrecta.' });
+    const user = usuarios[0];
+    const passValido = await bcrypt.compare(password, user.password);
+    if (!passValido) return res.status(400).json({ exito: false, mensaje: 'Contraseña incorrecta.' });
 
     const token = jwt.sign({ id: user.id, usuario: user.usuario, rol: user.rol }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ exito: true, token, usuario: user.usuario, rol: user.rol });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error de servidor.' });
+    res.status(500).json({ exito: false, mensaje: 'Error interno en login.' });
   }
 });
 
-// Usuarios
-app.post('/api/usuarios', verificarToken, soloAdmin, async (req, res) => {
+app.post('/api/usuarios', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ exito: false, mensaje: 'Solo administradores.' });
   const { usuario, password, rol } = req.body;
+  if (!usuario || !password || !rol) return res.status(400).json({ exito: false, mensaje: 'Faltan campos requeridos.' });
+
   try {
-    const hash = await bcrypt.hash(password, 10);
-    await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', [usuario.trim(), hash, rol || 'profesor']);
-    res.json({ exito: true, mensaje: `Usuario '${usuario}' creado.` });
+    const passHash = await bcrypt.hash(password, 10);
+    await queryDb('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)', [usuario, passHash, rol]);
+    res.json({ exito: true, mensaje: `Usuario ${usuario} creado exitosamente.` });
   } catch (err) {
-    res.status(400).json({ exito: false, mensaje: 'El usuario ya existe.' });
+    res.status(400).json({ exito: false, mensaje: 'El nombre de usuario ya existe o hubo un error.' });
   }
 });
 
-// Alumnos
+// ----------------- ENDPOINTS ALUMNOS -----------------
 app.get('/api/alumnos', async (req, res) => {
   try {
-    const alumnos = await queryDb('SELECT * FROM alumnos ORDER BY nombre ASC');
+    const alumnos = await queryDb('SELECT * FROM alumnos ORDER BY id DESC');
     res.json(alumnos);
   } catch (err) {
     res.status(500).json({ exito: false, mensaje: 'Error al obtener alumnos.' });
@@ -231,55 +166,99 @@ app.get('/api/alumnos', async (req, res) => {
 
 app.get('/api/alumnos/rut/:rut', async (req, res) => {
   try {
-    const alumnos = await queryDb('SELECT * FROM alumnos WHERE rut = ?', [req.params.rut.trim()]);
+    const rutBuscado = req.params.rut.trim();
+    const alumnos = await queryDb('SELECT * FROM alumnos WHERE rut = ?', [rutBuscado]);
     if (alumnos.length === 0) return res.status(404).json({ exito: false, mensaje: 'Estudiante no encontrado.' });
-    
+
     const alumno = alumnos[0];
     let promedioCalculado = "Sin notas";
     if (alumno.notas) {
       const lista = alumno.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
       if (lista.length > 0) promedioCalculado = (lista.reduce((a, b) => a + b, 0) / lista.length).toFixed(1);
     }
-    res.json({ exito: true, alumno: { ...alumno, promedioCalculado } });
+
+    // Buscar historial de ensayos rendidos por este alumno
+    const historialEnsayos = await queryDb(`
+      SELECT r.id, e.titulo, e.asignatura, r.puntaje, r.total_preguntas, r.fecha 
+      FROM resultados_ensayos r
+      JOIN ensayos e ON r.ensayo_id = e.id
+      WHERE r.alumno_rut = ?
+      ORDER BY r.fecha DESC
+    `, [rutBuscado]);
+
+    const ensayosFormateados = historialEnsayos.map(item => {
+      const nota = ((item.puntaje / item.total_preguntas) * 6 + 1).toFixed(1);
+      return { ...item, nota };
+    });
+
+    res.json({
+      exito: true,
+      alumno: {
+        ...alumno,
+        promedioCalculado,
+        historialEnsayos: ensayosFormateados
+      }
+    });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error en consulta.' });
+    console.error(err);
+    res.status(500).json({ exito: false, mensaje: 'Error en consulta de estudiante.' });
   }
 });
 
 app.post('/api/alumnos', verificarToken, async (req, res) => {
   const { rut, nombre, curso, notas, asistencia } = req.body;
+  if (!rut || !nombre || !curso) return res.status(400).json({ exito: false, mensaje: 'RUT, Nombre y Curso son obligatorios.' });
+
   try {
-    await queryDb('INSERT INTO alumnos (rut, nombre, curso, notas, asistencia) VALUES (?, ?, ?, ?, ?)',
-      [rut.trim(), nombre.trim(), curso.trim(), notas || '', asistencia || '']);
-    res.json({ exito: true, mensaje: 'Estudiante registrado.' });
+    await queryDb(
+      'INSERT INTO alumnos (rut, nombre, curso, notas, asistencia) VALUES (?, ?, ?, ?, ?)',
+      [rut.trim(), nombre.trim(), curso.trim(), notas || '', asistencia || '100%']
+    );
+    res.json({ exito: true, mensaje: 'Alumno registrado con éxito.' });
   } catch (err) {
-    res.status(400).json({ exito: false, mensaje: 'El RUT ya existe.' });
+    res.status(400).json({ exito: false, mensaje: 'El RUT ya existe en el sistema.' });
   }
 });
 
-app.put('/api/alumnos/rut/:rut', verificarToken, async (req, res) => {
-  const { nombre, curso, asistencia } = req.body;
-  try {
-    await queryDb('UPDATE alumnos SET nombre = ?, curso = ?, asistencia = ? WHERE rut = ?',
-      [nombre.trim(), curso.trim(), asistencia.trim(), req.params.rut.trim()]);
-    res.json({ exito: true, mensaje: 'Alumno actualizado.' });
-  } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al actualizar.' });
-  }
-});
-
-app.delete('/api/alumnos/rut/:rut', verificarToken, soloAdmin, async (req, res) => {
+app.delete('/api/alumnos/rut/:rut', verificarToken, async (req, res) => {
   try {
     await queryDb('DELETE FROM alumnos WHERE rut = ?', [req.params.rut.trim()]);
-    res.json({ exito: true, mensaje: 'Estudiante eliminado.' });
+    res.json({ exito: true, mensaje: 'Alumno eliminado correctamente.' });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al borrar.' });
+    res.status(500).json({ exito: false, mensaje: 'Error al borrar alumno.' });
   }
 });
 
-// ----------------- ENSAYOS / EXÁMENES -----------------
+// ----------------- ENDPOINTS ENSAYOS -----------------
+app.get('/api/ensayos', async (req, res) => {
+  try {
+    const ensayos = await queryDb('SELECT id, titulo, asignatura FROM ensayos ORDER BY id DESC');
+    res.json({ exito: true, ensayos });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al listar ensayos.' });
+  }
+});
 
-// Crear un nuevo ensayo (Solo profesores o admin)
+app.get('/api/ensayos/:id', async (req, res) => {
+  try {
+    const ensayos = await queryDb('SELECT * FROM ensayos WHERE id = ?', [req.params.id]);
+    if (ensayos.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no encontrado.' });
+
+    const e = ensayos[0];
+    res.json({
+      exito: true,
+      ensayo: {
+        id: e.id,
+        titulo: e.titulo,
+        asignatura: e.asignatura,
+        preguntas: JSON.parse(e.preguntas_json)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ exito: false, mensaje: 'Error al obtener ensayo.' });
+  }
+});
+
 app.post('/api/ensayos', verificarToken, async (req, res) => {
   const { titulo, asignatura, preguntas } = req.body;
   if (!titulo || !asignatura || !preguntas || preguntas.length === 0) {
@@ -299,71 +278,79 @@ app.post('/api/ensayos', verificarToken, async (req, res) => {
   }
 });
 
-// Guardar resultado de ensayo rendido por un estudiante
 app.post('/api/ensayos/responder', async (req, res) => {
-  const { ensayoId, alumnoRut, respuestas } = req.body; // respuestas = [0, 2, 1...] (índices marcados)
+  const { ensayoId, alumnoRut, respuestas } = req.body;
   try {
-    const filas = await queryDb('SELECT preguntas_json FROM ensayos WHERE id = ?', [ensayoId]);
-    if (filas.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no válido.' });
+    const ensayos = await queryDb('SELECT * FROM ensayos WHERE id = ?', [ensayoId]);
+    if (ensayos.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no encontrado.' });
 
-    const preguntas = JSON.parse(filas[0].preguntas_json);
-    let correctas = 0;
+    const preguntas = JSON.parse(ensayos[0].preguntas_json);
+    let puntaje = 0;
 
     preguntas.forEach((p, idx) => {
-      if (respuestas[idx] !== undefined && respuestas[idx] === p.correcta) {
-        correctas++;
+      if (respuestas[idx] === p.correcta) {
+        puntaje++;
       }
     });
 
-    const notaEscala = ((correctas / preguntas.length) * 6 + 1).toFixed(1); // Nota de 1.0 a 7.0
+    const total = preguntas.length;
+    const notaCalculada = ((puntaje / total) * 6 + 1).toFixed(1);
 
     await queryDb(
       'INSERT INTO resultados_ensayos (ensayo_id, alumno_rut, puntaje, total_preguntas) VALUES (?, ?, ?, ?)',
-      [ensayoId, alumnoRut.trim(), correctas, preguntas.length]
+      [ensayoId, alumnoRut.trim(), puntaje, total]
     );
 
     res.json({
       exito: true,
-      mensaje: 'Ensayo completado exitosamente.',
       resultado: {
-        correctas,
-        total: preguntas.length,
-        nota: notaEscala
+        puntaje,
+        total,
+        nota: notaCalculada
       }
     });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al guardar respuesta.' });
+    console.error(err);
+    res.status(500).json({ exito: false, mensaje: 'Error al calificar ensayo.' });
   }
 });
 
-// Obtener estadísticas acumuladas para los gráficos
+// ----------------- ESTADÍSTICAS DASHBOARD -----------------
 app.get('/api/estadisticas', async (req, res) => {
   try {
-    const alumnos = await queryDb('SELECT * FROM alumnos');
-    const resultados = await queryDb('SELECT * FROM resultados_ensayos');
+    const totalAlumnos = (await queryDb('SELECT COUNT(*) as c FROM alumnos'))[0].c;
+    const totalEnsayosRendidos = (await queryDb('SELECT COUNT(*) as c FROM resultados_ensayos'))[0].c;
 
-    // Promedio de notas general
-    let sumaNotas = 0;
-    let totalNotas = 0;
+    const alumnos = await queryDb('SELECT notas FROM alumnos WHERE notas IS NOT NULL AND notas != ""');
+    let sumaPromedios = 0;
+    let alumnosConNota = 0;
+
     alumnos.forEach(a => {
-      if (a.notas) {
-        const arr = a.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
-        arr.forEach(n => { sumaNotas += n; totalNotas++; });
+      const lista = a.notas.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+      if (lista.length > 0) {
+        sumaPromedios += lista.reduce((x, y) => x + y, 0) / lista.length;
+        alumnosConNota++;
       }
     });
 
-    const promedioGeneral = totalNotas > 0 ? (sumaNotas / totalNotas).toFixed(1) : "0.0";
+    const promedioGeneral = alumnosConNota > 0 ? (sumaPromedios / alumnosConNota).toFixed(1) : "0.0";
 
     res.json({
       exito: true,
-      totalAlumnos: alumnos.length,
-      promedioGeneral,
-      totalEnsayosRendidos: resultados.length,
-      ultimosResultados: resultados.slice(-10)
+      totalAlumnos,
+      totalEnsayosRendidos,
+      promedioGeneral
     });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al obtener métricas.' });
+    res.status(500).json({ exito: false, mensaje: 'Error al calcular estadísticas.' });
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+// Fallback SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/publico/index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor ejecutándose en el puerto ${PORT}`);
+});
