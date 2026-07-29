@@ -279,28 +279,23 @@ app.delete('/api/alumnos/rut/:rut', verificarToken, soloAdmin, async (req, res) 
 
 // ----------------- ENSAYOS / EXÁMENES -----------------
 
-// Obtener lista de ensayos disponibles
-app.get('/api/ensayos', async (req, res) => {
-  try {
-    const ensayos = await queryDb('SELECT id, titulo, asignatura FROM ensayos');
-    res.json({ exito: true, ensayos });
-  } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al cargar ensayos.' });
+// Crear un nuevo ensayo (Solo profesores o admin)
+app.post('/api/ensayos', verificarToken, async (req, res) => {
+  const { titulo, asignatura, preguntas } = req.body;
+  if (!titulo || !asignatura || !preguntas || preguntas.length === 0) {
+    return res.status(400).json({ exito: false, mensaje: 'Faltan datos o preguntas en el ensayo.' });
   }
-});
 
-// Obtener un ensayo completo con preguntas para rendir
-app.get('/api/ensayos/:id', async (req, res) => {
   try {
-    const filas = await queryDb('SELECT * FROM ensayos WHERE id = ?', [req.params.id]);
-    if (filas.length === 0) return res.status(404).json({ exito: false, mensaje: 'Ensayo no encontrado.' });
-    
-    const ensayo = filas[0];
-    ensayo.preguntas = JSON.parse(ensayo.preguntas_json);
-    delete ensayo.preguntas_json;
-    res.json({ exito: true, ensayo });
+    const preguntasJson = JSON.stringify(preguntas);
+    await queryDb(
+      'INSERT INTO ensayos (titulo, asignatura, preguntas_json) VALUES (?, ?, ?)',
+      [titulo.trim(), asignatura.trim(), preguntasJson]
+    );
+    res.json({ exito: true, mensaje: '¡Ensayo creado e incorporado al banco exitosamente!' });
   } catch (err) {
-    res.status(500).json({ exito: false, mensaje: 'Error al obtener ensayo.' });
+    console.error('Error al crear ensayo:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error al guardar el ensayo.' });
   }
 });
 

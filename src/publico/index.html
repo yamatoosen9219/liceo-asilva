@@ -4,11 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Liceo Bicentenario Asilva | Plataforma SaaS</title>
-  <!-- Tailwind CSS CDN para diseño moderno de alto nivel -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js para visualizaciones gráficas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased">
@@ -44,19 +41,17 @@
   <!-- PLATAFORMA DASHBOARD MODULAR -->
   <div id="panelPrincipal" class="min-h-screen flex hidden">
     
-    <!-- SIDEBAR DE NAVEGACIÓN MÓDULOS -->
+    <!-- SIDEBAR -->
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-4 shadow-xl">
       <div>
-        <!-- LOGO INSTITUCIONAL -->
         <div class="flex items-center gap-3 px-3 py-4 border-b border-slate-800 mb-6">
           <i data-lucide="building-2" class="w-7 h-7 text-blue-400"></i>
           <div>
             <h2 class="font-bold text-white text-base leading-tight">Liceo Asilva</h2>
-            <span class="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded font-mono">SaaS v2.0</span>
+            <span class="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded font-mono">SaaS v2.1</span>
           </div>
         </div>
 
-        <!-- MENU ITEMS -->
         <nav class="space-y-1">
           <button onclick="cambiarModulo('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
@@ -73,7 +68,6 @@
         </nav>
       </div>
 
-      <!-- PERFIL DE USUARIO Y LOGOUT -->
       <div class="border-t border-slate-800 pt-4 flex items-center justify-between">
         <div class="text-xs">
           <p class="font-bold text-white" id="nombreUsuarioActivo">Admin</p>
@@ -88,7 +82,7 @@
     <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 p-8 overflow-y-auto">
       
-      <!-- MÓDULO 1: DASHBOARD CON MÉTRICAS Y GRÁFICO -->
+      <!-- DASHBOARD -->
       <section id="mod-dashboard" class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
@@ -97,7 +91,6 @@
           </div>
         </div>
 
-        <!-- TARJETAS Kpis -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
@@ -124,7 +117,6 @@
           </div>
         </div>
 
-        <!-- GRÁFICO DE RENDIMIENTO -->
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h3 class="text-sm font-bold text-slate-800 mb-4">Rendimiento Estimado por Asignatura</h3>
           <div class="h-64">
@@ -133,7 +125,7 @@
         </div>
       </section>
 
-      <!-- MÓDULO 2: GESTIÓN DE ALUMNOS -->
+      <!-- GESTIÓN ALUMNOS -->
       <section id="mod-alumnos" class="space-y-6 hidden">
         <div class="flex items-center justify-between">
           <h1 class="text-2xl font-bold text-slate-900">Gestión de Estudiantes</h1>
@@ -142,13 +134,11 @@
           </button>
         </div>
 
-        <!-- BÚSQUEDA -->
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-3">
           <input type="text" id="rutInput" placeholder="Ingrese RUT alumno (ej: 21.456.789-0)" class="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-blue-500">
           <button onclick="buscarAlumno()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm">Buscar</button>
         </div>
 
-        <!-- RESULTADO BÚSQUEDA -->
         <div id="resultadoAlumno" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hidden space-y-4">
           <div class="flex justify-between items-start">
             <div>
@@ -168,7 +158,6 @@
           </div>
         </div>
 
-        <!-- FORMULARIO REGISTRO -->
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <h3 class="text-base font-bold text-slate-800">Registrar Nuevo Alumno</h3>
           <form onsubmit="registrarAlumno(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -179,19 +168,61 @@
             <input type="text" id="nuevaAsistencia" placeholder="Asistencia (ej: 95%)" class="p-2.5 border rounded-lg text-sm">
             <button type="submit" class="md:col-span-2 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg text-sm">Guardar Estudiante</button>
           </form>
-          <p id="mensajeForm" class="text-xs font-semibold hidden"></p>
         </div>
       </section>
 
-      <!-- MÓDULO 3: ENSAYOS Y EXÁMENES ONLINE -->
+      <!-- MÓDULO 3: ENSAYOS Y EXÁMENES ONLINE + CREADOR DOCENTE -->
       <section id="mod-ensayos" class="space-y-6 hidden">
-        <div>
-          <h1 class="text-2xl font-bold text-slate-900">Evaluaciones & Ensayos Online</h1>
-          <p class="text-xs text-slate-500">Simulador de pruebas diagnósticas y PAES</p>
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Evaluaciones & Ensayos Online</h1>
+            <p class="text-xs text-slate-500">Simulador y creador de evaluaciones pedagógicas</p>
+          </div>
+          <!-- Botón para alternar modo Creador / Rendedor -->
+          <button onclick="toggleCreadorEnsayo()" id="btnToggleCreador" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Crear Nuevo Ensayo
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Lista de Ensayos Disponibles -->
+        <!-- FORMULARIO CREADOR DE ENSAYOS (Oculto por defecto) -->
+        <div id="panelCreadorEnsayo" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hidden space-y-6">
+          <div class="border-b pb-3 flex justify-between items-center">
+            <h3 class="font-bold text-base text-slate-900">Diseñador de Ensayos / Pruebas</h3>
+            <button onclick="toggleCreadorEnsayo()" class="text-slate-400 hover:text-slate-600 text-xs font-semibold">✕ Cancelar</button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Título del Ensayo</label>
+              <input type="text" id="crearTitulo" placeholder="Ej: Diagnóstico PAES Matemática M1" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Asignatura</label>
+              <input type="text" id="crearAsignatura" placeholder="Ej: Matemática" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+          </div>
+
+          <!-- BANCO DE PREGUNTAS EN CONSTRUCCIÓN -->
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="font-bold text-sm text-slate-800">Preguntas de la Evaluación</h4>
+              <button type="button" onclick="agregarCampoPregunta()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Añadir Pregunta
+              </button>
+            </div>
+
+            <div id="listaPreguntasCreador" class="space-y-4">
+              <!-- Las preguntas agregadas dinámicamente aparecerán aquí -->
+            </div>
+          </div>
+
+          <button onclick="guardarNuevoEnsayo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm shadow">
+            Publicar Ensayo en el Sistema
+          </button>
+        </div>
+
+        <!-- VISTA HABITUAL DE ENSAYOS -->
+        <div id="panelVistaEnsayos" class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <h3 class="font-bold text-slate-800 text-sm">Ensayos Disponibles</h3>
             <div id="listaEnsayos" class="space-y-2">
@@ -199,7 +230,6 @@
             </div>
           </div>
 
-          <!-- ÁREA DE PRUEBA EN VIVO -->
           <div class="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div id="areaRendirEnsayo" class="hidden space-y-6">
               <div class="border-b pb-3 flex justify-between items-center">
@@ -227,7 +257,6 @@
               <p class="text-sm">Selecciona un ensayo de la lista para comenzar la rendición online.</p>
             </div>
 
-            <!-- RESULTADO ENSAYO -->
             <div id="resultadoEnsayoRendido" class="hidden text-center py-8 space-y-3">
               <div class="inline-flex p-4 bg-emerald-100 text-emerald-600 rounded-full mb-2">
                 <i data-lucide="check-circle-2" class="w-10 h-10"></i>
@@ -241,7 +270,7 @@
         </div>
       </section>
 
-      <!-- MÓDULO 4: GESTIÓN DE USUARIOS (ADMIN) -->
+      <!-- USUARIOS ADMIN -->
       <section id="mod-usuarios" class="space-y-6 hidden">
         <h1 class="text-2xl font-bold text-slate-900">Administración de Personal</h1>
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-lg space-y-4">
@@ -266,6 +295,7 @@
     let rutActualGuardado = "";
     let ensayoActivoGlobal = null;
     let miGrafico = null;
+    let contadorPreguntasCreador = 0;
 
     window.onload = () => {
       lucide.createIcons();
@@ -317,7 +347,6 @@
       location.reload();
     }
 
-    // NAVEGACIÓN MODULAR (SPA)
     function cambiarModulo(mod) {
       ['dashboard', 'alumnos', 'ensayos', 'usuarios'].forEach(m => {
         document.getElementById(`mod-${m}`).classList.add('hidden');
@@ -340,7 +369,6 @@
             document.getElementById('kpiAlumnos').textContent = res.totalAlumnos;
             document.getElementById('kpiPromedio').textContent = res.promedioGeneral;
             document.getElementById('kpiEnsayos').textContent = res.totalEnsayosRendidos;
-
             inicializarGrafico();
           }
         });
@@ -426,7 +454,119 @@
       });
     }
 
-    // ENSAYOS
+    // CREADOR Y RENDIDOR DE ENSAYOS
+    function toggleCreadorEnsayo() {
+      const creador = document.getElementById('panelCreadorEnsayo');
+      const vista = document.getElementById('panelVistaEnsayos');
+      const btn = document.getElementById('btnToggleCreador');
+
+      if (creador.classList.contains('hidden')) {
+        creador.classList.remove('hidden');
+        vista.classList.add('hidden');
+        btn.classList.add('hidden');
+        if (contadorPreguntasCreador === 0) {
+          agregarCampoPregunta(); // Agregar 1era pregunta por defecto
+        }
+      } else {
+        creador.classList.add('hidden');
+        vista.classList.remove('hidden');
+        btn.classList.remove('hidden');
+      }
+    }
+
+    function agregarCampoPregunta() {
+      contadorPreguntasCreador++;
+      const id = contadorPreguntasCreador;
+      const cont = document.getElementById('listaPreguntasCreador');
+
+      const html = `
+        <div id="pregunta_card_${id}" class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-blue-600 uppercase">Pregunta #${id}</span>
+            <button type="button" onclick="eliminarCampoPregunta(${id})" class="text-xs text-red-500 hover:underline">Eliminar</button>
+          </div>
+          <input type="text" class="p_enunciado w-full p-2 border rounded text-xs" placeholder="Enunciado de la pregunta (ej: ¿Cuánto es 12 + 15?)" required>
+          
+          <div class="space-y-1.5 pl-2">
+            <p class="text-[11px] text-slate-500 font-semibold">Opciones de respuesta (Marca el círculo de la opción correcta):</p>
+            <div class="flex items-center gap-2">
+              <input type="radio" name="p_correcta_${id}" value="0" checked>
+              <input type="text" class="p_op_0 flex-1 p-1.5 border rounded text-xs" placeholder="Opción A" required>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="radio" name="p_correcta_${id}" value="1">
+              <input type="text" class="p_op_1 flex-1 p-1.5 border rounded text-xs" placeholder="Opción B" required>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="radio" name="p_correcta_${id}" value="2">
+              <input type="text" class="p_op_2 flex-1 p-1.5 border rounded text-xs" placeholder="Opción C" required>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="radio" name="p_correcta_${id}" value="3">
+              <input type="text" class="p_op_3 flex-1 p-1.5 border rounded text-xs" placeholder="Opción D" required>
+            </div>
+          </div>
+        </div>
+      `;
+      cont.insertAdjacentHTML('beforeend', html);
+    }
+
+    function eliminarCampoPregunta(id) {
+      const card = document.getElementById(`pregunta_card_${id}`);
+      if (card) card.remove();
+    }
+
+    function guardarNuevoEnsayo() {
+      const titulo = document.getElementById('crearTitulo').value.trim();
+      const asignatura = document.getElementById('crearAsignatura').value.trim();
+      
+      if (!titulo || !asignatura) return alert('Por favor ingresa título y asignatura.');
+
+      const cards = document.querySelectorAll('#listaPreguntasCreador > div');
+      if (cards.length === 0) return alert('Debes agregar al menos una pregunta.');
+
+      const preguntas = [];
+
+      cards.forEach((card, idx) => {
+        const enunciado = card.querySelector('.p_enunciado').value.trim();
+        const op0 = card.querySelector('.p_op_0').value.trim();
+        const op1 = card.querySelector('.p_op_1').value.trim();
+        const op2 = card.querySelector('.p_op_2').value.trim();
+        const op3 = card.querySelector('.p_op_3').value.trim();
+        
+        const radioChecked = card.querySelector(`input[type="radio"]:checked`);
+        const correcta = radioChecked ? parseInt(radioChecked.value) : 0;
+
+        preguntas.push({
+          id: idx + 1,
+          enunciado,
+          opciones: [op0, op1, op2, op3],
+          correcta
+        });
+      });
+
+      fetch('/api/ensayos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token_liceo')}`
+        },
+        body: JSON.stringify({ titulo, asignatura, preguntas })
+      })
+      .then(r => r.json())
+      .then(res => {
+        alert(res.mensaje);
+        if (res.exito) {
+          document.getElementById('crearTitulo').value = '';
+          document.getElementById('crearAsignatura').value = '';
+          document.getElementById('listaPreguntasCreador').innerHTML = '';
+          contadorPreguntasCreador = 0;
+          toggleCreadorEnsayo();
+          cargarListaEnsayos();
+        }
+      });
+    }
+
     function cargarListaEnsayos() {
       fetch('/api/ensayos')
         .then(r => r.json())
@@ -510,6 +650,29 @@
     function volverAEnsayos() {
       document.getElementById('resultadoEnsayoRendido').classList.add('hidden');
       document.getElementById('placeholderEnsayo').classList.remove('hidden');
+    }
+
+    function crearUsuario(e) {
+      e.preventDefault();
+      fetch('/api/usuarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token_liceo')}`
+        },
+        body: JSON.stringify({
+          usuario: document.getElementById('nuevoUserNombre').value,
+          password: document.getElementById('nuevoUserPass').value,
+          rol: document.getElementById('nuevoUserRol').value
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        const msg = document.getElementById('msgUserForm');
+        msg.textContent = res.mensaje;
+        msg.classList.remove('hidden');
+        if (res.exito) e.target.reset();
+      });
     }
 
     function descargarCSV() {
